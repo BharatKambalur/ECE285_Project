@@ -5,19 +5,28 @@ import matplotlib.pyplot as plt
 #import imageio
 #import pyscreenshot as IG
 import os
-from math import sin,cos,pi
+from math import sin,cos,pi,sqrt
 import time
 
 
-
+ARM_REACH = .9;
+ARM_REACH_MIN = .1;
+ARM_FIRST_HEIGHT = .2;
 
 TABLE_HEIGHT = 1.30;
+POKER_POS_OFFSET = 1.3;
 BLOCK_HEIGHT=.09;#These are taken from URDF file
 BLOCK_WIDTH=.15;
 BLOCK_LENGTH=.45;
 POKER_HEIGHT=.03;#These are taken from URDF file
 POKER_WIDTH=.05;
 POKER_LENGTH=.6;
+
+cam_dist    = 2.5
+#cam_yaw    = 60;
+cam_yaw    = 0;
+cam_pitch     = 0;
+cam_pos     = [0,0,2.5];
 
 class sim_environment():
     #I am pre-defining all values here, the values here should not affect anything,
@@ -28,8 +37,8 @@ class sim_environment():
 
     pybulletPath = "C:/Users/SBWork/Documents/pythonLibs/bullet3/data/"
 
-    pokerBotInitOrient = [0,0,0,0,0,0];
-    grabberBotInitOrient = [0,0,0,0,0,0];
+    pokerBotInitOrient = [0,0,0,0,0,0,0];
+    grabberBotInitOrient = [0,0,0,0,0,0,0];
     towerWidth = 0;
     towerHeight = 0;
     towerBlocks = 0;
@@ -44,10 +53,15 @@ class sim_environment():
     STEP_SIMS = 1;#Number of simulation steps to perform each movement, needs to be >1 for stability
     client = 0;
     
+    log_data = False;
+    cur_file_num = 0;
+    RUN_FILE_NAME = 'exp_';
+    data_string = '';
     
-    pokerbot_initial_pos = [0,0,0];
-    grabbot_initial_pos = [0,0,0];
-    tower_initial_pos = [0,0,0];
+    
+    pokerbot_initial_pos    = [-POKER_POS_OFFSET,0,TABLE_HEIGHT-.2];
+    grabbot_initial_pos     = [1.5,0,TABLE_HEIGHT-.2];
+    tower_initial_pos       = [0,0,TABLE_HEIGHT];
     
     tableID    = 0;
     pokerbotID = 0;
@@ -59,17 +73,21 @@ class sim_environment():
     
     
     pokerBotInitBO = [[0,0,0],[0,0,0,1]];
-    pokerInitBO = [[-1,0.0,3],[0,0,0,1]];#If we are using the poker bot, no need to init position, it is connected to robot
+    pokerInitBO = [[-1,0.0,1.47],[0,0,0,1]];#If we are using the poker bot, no need to init position, it is connected to robot
     grabberBotInitBO = [[0,0,0],[0,0,0,1]];
     towerInitBO = [];
+    pokerBotRestJoint = [0,pi/2,0,-pi/2,0,0,0];
+    pokerBotDesiredJoint = [0,0,0,0,0,0,0];
+    pokerBotResetJoint = pokerBotDesiredJoint;
+    pokerBotDesiredPos = [0,0,0];
     
-    #def __init__(self):
-    #    self.initialize_environment(tW=3,tH=6);
+    def __init__(self):
+        self.initialize_environment(tW=3,tH=6);
         
-    def __init__(self,tW=3,tH=6,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath="",outfilePath=""):
-        self.initialize_environment(tW,tH,useGUI,usePokerBot,useGrabberBot,SIM_SECOND_STEPS,towerOrient,delta,buildTower,pybulletPath,outfilePath);
+    def __init__(self,tW=3,tH=6,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath="",outfilePath="",log_data=False):
+        self.initialize_environment(tW,tH,useGUI,usePokerBot,useGrabberBot,SIM_SECOND_STEPS,towerOrient,delta,buildTower,pybulletPath,outfilePath,log_data);
 
-    def initialize_environment(self,tW,tH,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath ="",outfilePath=""):
+    def initialize_environment(self,tW,tH,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath ="",outfilePath="",log_data=False):
         #This function sets up the environment, it currently only
         if(pybulletPath != ""):
             self.pybulletPath = pybulletPath;
@@ -78,7 +96,8 @@ class sim_environment():
             
             
         self.tablePath = self.pybulletPath + "table/table_mid.urdf";
-        self.kukaPath = self.pybulletPath + "kuka_lwr/kuka.urdf";
+        self.kukaPath = self.pybulletPath + "kuka_lwr/kuka2.urdf";
+        #self.kukaPath = self.pybulletPath + "kuka_iiwa/model.urdf";
         self.jengaPath = self.pybulletPath + "jenga/jenga_mid2.urdf"
         self.pokerPath = self.pybulletPath + "jenga/poker.urdf";
         self.gripperPath = self.pybulletPath + "gripper/wsg50_one_motor_gripper_new_free_base.sdf";    
@@ -112,6 +131,7 @@ class sim_environment():
         
         
         self.max_delta = delta;
+        self.log_data = log_data;
     
         #Set sim parameters
         if(self.useGUI):
@@ -120,7 +140,7 @@ class sim_environment():
             self.client = p.connect(p.DIRECT);
    
         #test = p.loadURDF(pokerPath,[0,0,5],[0,0,0,1]);
-        #p.stepSimulation();
+        #self.step_sim();
         #print('ID = %d\n'%(test));
         #print('numJoints = %d'%(p.getNumJoints(test)));
         #print('jointInfo = %d'%(p.getJointInfo(test)));
@@ -129,30 +149,29 @@ class sim_environment():
         p.setTimeStep(1.0/SIM_SECOND_STEPS);
         p.setGravity(0.0,0.0,-9.8);
         #p.resetDebugVisualizerCamera(5,40,0,[-.0376,0.3159,-.0344]);
-        p.resetDebugVisualizerCamera(2.5,0,0,[0,0,1.5]);
-        
-        pokerbot_initial_pos = [-1.2,0,TABLE_HEIGHT];
-        grabbot_initial_pos = [1.2,0,TABLE_HEIGHT];
-        tower_initial_pos = [0,0,TABLE_HEIGHT];
+        p.resetDebugVisualizerCamera(cam_dist,cam_pitch,cam_yaw,cam_pos);
         
     
         #Load sim objects
         print('Environment loading objects');
         self.tableID    = p.loadURDF(self.tablePath);
         if(usePokerBot):#If we are not counting the robot, we need the base of the block to be fixed
-            self.pokerbotID = p.loadURDF(self.kukaPath,pokerbot_initial_pos,useFixedBase=True);
+            self.pokerbotID = p.loadURDF(self.kukaPath,self.pokerbot_initial_pos,useFixedBase=True);
+            for j in range(0,7):
+                print('Joint %d'%(j));
+                print(p.getJointInfo(self.pokerbotID,j));
         else:
             self.pokerbotID = 0;
             
         if(self.usePokerBot):
             self.pokerID    = p.loadURDF(self.pokerPath,[0,0,5],p.getQuaternionFromEuler([0,0,0]));
         else:
-            self.pokerID    = p.loadURDF(self.pokerPath,[0,0,3],p.getQuaternionFromEuler([0,0,0]),useFixedBase=True);
+            self.pokerID    = p.loadURDF(self.pokerPath,self.pokerInitBO[0],p.getQuaternionFromEuler([0,0,0]),useFixedBase=True);
         
         #self.pokerID    = p.loadSDF(gripperPath)[0];
         
         if(self.useGrabberBot):
-            self.grabberbotID = p.loadURDF(self.kukaPath,grabbot_initial_pos,useFixedBase=True);
+            self.grabberbotID = p.loadURDF(self.kukaPath,self.grabbot_initial_pos,useFixedBase=True);
             self.gripperID = p.loadSDF(self.gripperPath)[0];
         else:
             self.grabberbotID = 0;
@@ -186,7 +205,7 @@ class sim_environment():
         #Run a very short period of time, just so everything settles into position
         #p.setRealTimeSimulation(enableRealTimeSimulation = 1);
         for i in range(0,10):
-            p.stepSimulation();
+            self.step_sim();
                 
                 
         print('Getting initial positions of all objects');
@@ -195,7 +214,7 @@ class sim_environment():
             self.pokerInitBO = [[0,0,0],[0,0,0,1]];#If we are using the poker bot, no need to init position, it is connected to robot
         else:
             self.pokerBotInitBO = [[0,0,0],[0,0,0,1]];
-            self.pokerInitBO = p.getBasePositionAndOrientation(self.pokerID);
+            #self.pokerInitBO = p.getBasePositionAndOrientation(self.pokerID);
         
         if(self.useGrabberBot):
             #Grabber gripper will always be attached to grabber bot, no need to init BO
@@ -212,8 +231,46 @@ class sim_environment():
               
         
         print('Environment setup complete');
+    def log_step(self,val):
+        self.data_string += val;
+    def flush_log(self):
+        filePath = self.outputFilesPath + self.RUN_FILE_NAME + str(self.cur_file_num) + '.bin';
+        file = open(filePath,'wb');
+        file.write(self.data_string);
+        self.data_string = '';
+        file.close();
+    def recreate_run(self,filePath):
+        log_setting = self.log_data;
+        self.log_data = False;
         
-    def reset_simulation(self):       
+        
+        file = open(filePath,'r');
+        string = file.read();
+        file.close();
+        
+        self.reset_simulation()
+        for c in string:
+            if(c == 'F'):
+                self.move_poker_px();
+            elif(c == 'B'):
+                self.move_poker_nx();
+            elif(c == 'L'):
+                self.move_poker_py();
+            elif(c == 'R'):
+                self.move_poker_ny();
+            elif(c == 'U'):
+                self.move_poker_pz();
+            elif(c == 'D'):
+                self.move_poker_nz();
+            elif(c == 'S'):
+                self.move_poker_stationary();
+            else:
+                print('Error reading run file, unrecognized character %s'%(c));
+            
+                
+        self.log_data = log_setting;
+        
+    def reset_simulation(self,ignore_log = False):       
         if(self.usePokerBot):
             p.resetBasePositionAndOrientation(self.pokerbotID,self.pokerBotInitBO[0],self.pokerBotInitBO[1]);
             for i in range(0,p.getNumJoints(self.pokerbotID)):
@@ -235,73 +292,212 @@ class sim_environment():
         #Run a very short period of time, just so everything settles into position
         #p.setRealTimeSimulation(enableRealTimeSimulation = 1);
         for i in range(0,100):
-            p.stepSimulation();
-
+            self.step_sim();
+            
+            
+        if(self.log_data and not ignore_log):    
+            self.flush_log();
+            self.cur_file_num+=1;
             
     #BEGIN CONTROL POKER CODE---------------------------------------------------
+    def reset_poker_position(self):
+        if(self.usePokerBot):
+            self.pokerBotDesiredJoint = self.pokerBotResetJoint;
+            for i in range(0,250):
+                self.step_sim();
     def set_poker_position(self,position):
         #This sets the position based on block end, not block center
-        endPos = self.get_poker_position();
-        cenPos = self.get_poker_center_position();
-        diff = np.subtract(cenPos,endPos)[0];
-        #print(cenPos);
-        #print(diff);
-        
-        newPos = np.add(position,diff);
-        #print(newPos);
-        OR = self.get_poker_orientation();
-        p.resetBasePositionAndOrientation(self.pokerID,newPos,OR);
+        #if(True):
+        if(not self.usePokerBot):
+            endPos,OR = self.get_poker_position_and_orientation();
+            cenPos = self.get_poker_center_position();
+            diff = np.subtract(cenPos,endPos);
+            newPos = np.add(position,diff);
+            OR = self.pokerInitBO[1];
+            
+            
+            
+            if(len(newPos)==1):
+                newPos = newPos[0];#This is here because sometimes nump outputs array within array
+            p.resetBasePositionAndOrientation(self.pokerID,newPos,OR);
+            
+            
+        else:
+                
+            OR = p.getQuaternionFromEuler([0,pi/2,0]);
+            endPos = self.get_poker_back_position_and_orientation(use_actual_OR=False)[0];
+            cenPos = self.get_poker_position(False)[0];
+            #cenPos = self.get_poker_center_position();
+            diff = np.subtract(endPos,cenPos);
+            #print('DIFF');
+            #print(diff);
+            
+            newPos = np.add(position,diff);
+            self.pokerBotDesiredPos = newPos;
+            #newPos = position;
+            jd = [.00001,.00001,.00001,.00001,.00001,.00001,.00001];
+            #jd = [100,100,100,100,100,100,100];
+            OR = p.getQuaternionFromEuler([0,pi/2,0]);
+            
+            
+            
+            for j in range(0,15):
+                jointPos = p.calculateInverseKinematics(self.pokerbotID,6,targetPosition=newPos,targetOrientation=OR,jointDamping=jd,restPoses=self.pokerBotRestJoint);
+            
+                self.pokerBotDesiredJoint = jointPos;
+                #print(jointPos);
+                self.set_pokerBot_position(jointPos);
+                #Do inverse kinematics on robot
+                for i in range(0,10):
+                    self.step_sim();
+            #print('NewMove');
+            #print(jointPos);
+            #print('Back Values');
+            #print(newPos);
+            #print(self.get_poker_back_position_and_orientation()[0]);
+            #print(np.subtract(self.get_poker_back_position_and_orientation()[0],newPos));
+            
+            #print('Front Values');
+            #print(position);
+            #print(self.get_poker_position_and_orientation()[0]);
+            #print(np.subtract(self.get_poker_position_and_orientation()[0],position));
+            #print('End \n');
+            #print(self.get_poker_back_position_and_orientation()[0]);
+            #print(p.getEulerFromQuaternion(self.get_poker_back_position_and_orientation()[1]));
+            #print(self.get_poker_position_and_orientation()[0]);
+            #print(p.getEulerFromQuaternion(self.get_poker_position_and_orientation()[1]));
+            
+            
     def set_poker_orientation(self,orientation):
         print('set poker orientation not yet implemented');
         #return [0,0,0,1];
+        
+    def set_pokerBot_position(self,jointPos):
+        for i in range(0,7):
+                p.setJointMotorControl2(self.pokerbotID,i,controlMode=p.POSITION_CONTROL,targetPosition=jointPos[i],force=1000,positionGain=.05,velocityGain=1);
     def move_poker(self,offset):
-        pos,OR = p.getBasePositionAndOrientation(self.pokerID);
-        p.resetBasePositionAndOrientation(self.pokerID,np.add(pos,offset),OR);
+        
+        #if(True):
+        if(not self.usePokerBot):
+            pos,OR = p.getBasePositionAndOrientation(self.pokerID);
+            p.resetBasePositionAndOrientation(self.pokerID,np.add(pos,offset),OR);
+            #for i in range(0,self.STEP_SIMS):
+            #    self.step_sim();
+                
+        else:
+            #pos,OR = self.get_poker_back_position_and_orientation(False);
+            #new_pos = np.add(pos,offset);
+            new_pos = np.add(self.pokerBotDesiredPos,offset);
+            
+            if(not self.check_range(new_pos)):
+                new_pos = self.pokerBotDesiredPos;
+            
+            self.pokerBotDesiredPos = new_pos;
+            #print(new_pos);
+            jd = [.00001,.00001,.00001,.00001,.00001,.00001,.00001];
+            #jd = [100,100,100,100,100,100,100];
+            OR = p.getQuaternionFromEuler([0,pi/2,0]);
+            #print(new_pos);
+            jointPos = p.calculateInverseKinematics(self.pokerbotID,6,targetPosition=new_pos,targetOrientation=OR,jointDamping=jd,restPoses=self.pokerBotRestJoint);
+            self.pokerBotDesiredJoint = jointPos;
+            #print(jointPos);
+            self.set_pokerBot_position(jointPos);
+            
         for i in range(0,self.STEP_SIMS):
-            p.stepSimulation();
+            self.step_sim();  
+            
+            
+            
     def move_poker_px(self):
+        if(self.log_data):
+            self.log_step('F');
         self.move_poker([self.max_delta,0,0]);
+        
     def move_poker_nx(self):
+        if(self.log_data): 
+            self.log_step('B');
         self.move_poker([-self.max_delta,0,0]);
         
     def move_poker_py(self):
+        if(self.log_data): 
+            self.log_step('L');
         self.move_poker([0,self.max_delta,0]);
+        
     def move_poker_ny(self):
+        if(self.log_data): 
+            self.log_step('R');
         self.move_poker([0,-self.max_delta,0]);
     
     def move_poker_pz(self):
+        if(self.log_data): 
+            self.log_step('U');
         self.move_poker([0,0,self.max_delta]);
+        
     def move_poker_nz(self):
+        if(self.log_data): 
+            self.log_step('D');
         self.move_poker([0,0,-self.max_delta]);
+        
     def move_poker_stationary(self):
+        if(self.log_data): 
+            self.log_step('S');
         self.move_poker([0,0,0]);
+        
     #END CONTROL POKER CODE---------------------------------------------------
-    
+    def step_sim(self):
+        if(self.usePokerBot):
+            self.set_pokerBot_position(self.pokerBotDesiredJoint);
             
+        p.stepSimulation();
+    
+    def check_range(self,position):
+        
+        #Desired Offset
+        init_pos = np.add(self.pokerbot_initial_pos,[0,0,ARM_FIRST_HEIGHT]);
+        d_o= np.subtract(position,init_pos);
+        distance = d_o[0]*d_o[0] + d_o[1]*d_o[1] + d_o[2]*d_o[2];
+        distance = sqrt(distance);
+        
+        #print("Need to determine bounds that robot can reliably use");
+        if(distance > ARM_REACH):
+            return False;
+        
+        if(distance < ARM_REACH_MIN):
+            return False;
+        
+        return True;
     #BEGIN GET POS/ORIENT CODE-------------------------------------------------------
     
     #Code to get positions / orientations of various objects from the simulation
     #The next 3 functions get the position of the tip of the end effector
-    def get_poker_position(self):
-        return self.get_poker_position_and_orientation()[0];
+    def get_poker_position(self,use_actual_OR=True):
+        return self.get_poker_position_and_orientation(use_actual_OR)[0];
     #Orientation is same for tip and center    
     def get_poker_orientation(self):
         return self.get_poker_position_and_orientation()[1];
-    def get_poker_position_and_orientation(self):
-        pos_OR = p.getBasePositionAndOrientation(self.pokerID);
-        OR = pos_OR[1];
-        pos = pos_OR[0];
-        
+    def get_poker_position_and_orientation(self,use_actual_OR=True):
+        pos,OR = p.getBasePositionAndOrientation(self.pokerID);
+        if(not use_actual_OR):
+            OR = self.pokerInitBO[1];
         #This additional math is to get tip of end effector, not center
         rot = np.reshape(p.getMatrixFromQuaternion(OR),[3,3]);
-        block_offset = np.reshape([POKER_LENGTH/2,0,0],[1,3]);
+        block_offset_t = np.reshape([POKER_LENGTH/2,0,0],[1,3]);
+        block_offset = np.matmul(block_offset_t,rot);
         pos_offset = pos + block_offset;
-        return [pos_offset,OR];
+        return pos_offset[0],OR;
         
     def get_poker_center_position(self):
         return p.getBasePositionAndOrientation(self.pokerID)[0];    
     def get_poker_center_position_and_orientation(self):
         return p.getBasePositionAndOrientation(self.pokerID);
+    def get_poker_back_position(self,use_actual_OR=True):
+        return self.get_poker_back_position_and_orientation(use_actual_OR)[0];
+        
+    def get_poker_back_position_and_orientation(self,use_actual_OR=True):
+        pos,OR = p.getBasePositionAndOrientation(self.pokerID);
+        op_offset = np.subtract(pos,self.get_poker_position(use_actual_OR));
+        back_pos = np.add(pos,op_offset);
+        return back_pos,OR;
     
     #These functions are for getting position / orientation of particular tower blocks    
     def get_block_position(self,ID):
@@ -317,7 +513,7 @@ class sim_environment():
         rot = np.reshape(p.getMatrixFromQuaternion(OR),[3,3]);
         block_offset = np.reshape([BLOCK_LENGTH/2,0,0],[1,3]);
         pos_offset = pos - block_offset;#Minus in this case because we want the back of the block, not the front
-        return [pos_offset,OR];
+        return pos_offset[0],OR;
         
         
     def get_block_center_position(self,ID):
@@ -360,7 +556,7 @@ class sim_environment():
         
     def get_good_push_block(self):
         #This will need to be a bit more sophisticated, but it will do for now
-        center_off = (self.towerWidth-1 / 2);
+        center_off = (self.towerWidth-1) / 2;
         row = 3; #Odd if first row faces bot, even otherwise
         if(self.towerHeight <= row):
             row = self.towerHeight;
@@ -445,6 +641,51 @@ class sim_environment():
         elapsed_time = time.time() - start_time;
         print('Proof of Concept complete, elapsed time = %ds'%(elapsed_time));
 
-    def captureImage(self):
-        w,h,rgb,d,s = p.getCameraImage(960,720)
-        return w,h,rgb
+    def test_pokerbot(self):
+        STEPS=0;
+        ROB_STEPS = 250;
+        BEGIN_ORIENT = [-.5,0,2];
+        block_pos = [];
+        block_pos.append(self.get_block_center_position(26));
+        block_pos.append(self.get_block_center_position(24));
+        block_pos.append(self.get_block_center_position(20));
+        block_pos.append(self.get_block_center_position(18));
+        block_pos.append(self.get_block_center_position(14));
+        block_pos.append(self.get_block_center_position(12));
+        block_pos.append(self.get_block_center_position(8));
+        block_pos.append(self.get_block_center_position(6));
+        for i in range(0,STEPS):
+            self.step_sim();
+            
+            
+        self.set_poker_position(BEGIN_ORIENT);
+        for i in range(0,STEPS):
+                self.step_sim();
+        print('lol');
+        raw_input();
+        for i in range(0,7):
+            self.pokerBotResetJoint[i] = p.getJointState(self.pokerbotID,i)[0];
+            print(self.pokerBotResetJoint[i]);
+            
+            
+        for cur_pos in block_pos:
+            self.reset_poker_position();
+            for i in range(0,STEPS):
+                self.step_sim();
+            print('reset pos');
+            for i in range(0,7):
+                curstate = p.getJointState(self.pokerbotID,i)[0];
+                print(curstate);
+            self.set_poker_position([-.6,cur_pos[1],cur_pos[2]]);
+            for i in range(0,STEPS):
+                self.step_sim();
+            print('moving to block');
+            for j in range(0,ROB_STEPS):
+                self.move_poker_px();
+            print('Reversing');
+            for j in range(0,ROB_STEPS/2):
+                self.move_poker_nx();
+            
+            
+            
+        self.set_poker_position(BEGIN_ORIENT);
