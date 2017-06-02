@@ -80,9 +80,6 @@ class sim_environment():
     pokerBotDesiredJoint = [0,0,0,0,0,0,0];
     pokerBotResetJoint = pokerBotDesiredJoint;
     pokerBotDesiredPos = [0,0,0];
-    
-    def __init__(self):
-        self.initialize_environment(tW=3,tH=6);
         
     def __init__(self,tW=3,tH=6,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath="",outfilePath="",log_data=False,init_poker_pos=[-.5,0,2],log_mode='all'):
         self.initialize_environment(tW,tH,useGUI,usePokerBot,useGrabberBot,SIM_SECOND_STEPS,towerOrient,delta,buildTower,pybulletPath,outfilePath,log_data,init_poker_pos,log_mode);
@@ -206,7 +203,7 @@ class sim_environment():
         
         #Run a very short period of time, just so everything settles into position
         #p.setRealTimeSimulation(enableRealTimeSimulation = 1);
-        for i in range(0,10):
+        for i in range(0,100):
             self.step_sim();
                 
                 
