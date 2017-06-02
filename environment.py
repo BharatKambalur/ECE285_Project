@@ -1,14 +1,17 @@
 from sim_environment import sim_environment
 import numpy as np
 import time
+from random import randint
 import matplotlib as plt
 
 class environment(object):
 
     def __init__(self,pybulletPath):
-        self.env = sim_environment(tW=3,tH=6,useGUI=False,pybulletPath=pybulletPath)
-        self.env.set_poker_position([-1,0.0,1.47])
-        
+        self.env = sim_environment(tW=3,tH=6,useGUI=True,pybulletPath=pybulletPath)
+        self.delta = self.env.get_movement_delta()
+        self.original_poker_pos = [-1,0.0,1.47]
+        self.env.set_poker_reset_position(self.original_poker_pos)
+        self.env.set_poker_position(self.original_poker_pos)
         self.GB_ID = self.env.get_good_push_block()
         self.TopBlocks_IDs = self.env.get_top_blocks_IDS()
         self.init_GB_pos = self.env.get_block_position(self.GB_ID)
@@ -109,6 +112,26 @@ class environment(object):
 
         return self.get_state()
 
+    def reset_random(self):
+        self.env.reset_simulation()
+        print(self.get_state())
+        x_num = randint(0,600)
+        y_num = randint(-300,300)
+        z_num = randint(-150,150)
+        random_offset = np.zeros(3)
+        random_offset[0] = x_num * self.delta
+        random_offset[1] = y_num * self.delta
+        random_offset[2] = z_num * self.delta
+        new_pos = np.add(self.original_poker_pos,random_offset)
+        self.env.set_poker_position(new_pos)
+        self.GB_ID = self.env.get_good_push_block()
+        self.TopBlocks_IDs = self.env.get_top_blocks_IDS()
+        self.init_GB_pos = self.env.get_block_position(self.GB_ID)
+        self.init_TB1_pos = self.env.get_block_center_position(self.TopBlocks_IDs[0])
+        self.init_TB2_pos = self.env.get_block_center_position(self.TopBlocks_IDs[1])
+        self.init_TB3_pos = self.env.get_block_center_position(self.TopBlocks_IDs[2])
+        self.poker_reached_close = self.poker_close_check()
+
 if __name__ == "__main__":
     # The default execution is simply poking one block through and
     # then making the tower fall over by moving to the left and right
@@ -116,8 +139,8 @@ if __name__ == "__main__":
     ##################################################################################
     ##################### Uncomment for your own ####################################
     #pybulletPath = "/home/auggienanz/bullet3/data/" #Auggie
-    #pybulletPath = "D:/ECE 285 - Advances in Robot Manipulation/bullet3-master/data/" #Bharat
-    pybulletPath = 'C:/Users/Juan Camilo Castillo/Documents/bullet3/bullet3-master/data/' #Juan
+    pybulletPath = "D:/ECE 285 - Advances in Robot Manipulation/bullet3-master/data/" #Bharat
+    #pybulletPath = 'C:/Users/Juan Camilo Castillo/Documents/bullet3/bullet3-master/data/' #Juan
 
     #################################################################################
 
@@ -125,29 +148,33 @@ if __name__ == "__main__":
     start_time = time.time()
     print('Initial Env State:')
     print(env.get_state())
-    for i in range(0,900):
-        ns, reward, done = env.step(0)
-        time.sleep(0.001)
-        print(ns, reward, done)
+    for i in range(50):
+        time.sleep(0.5)
+        env.reset_random()
 
-
-
-    for i in range(0,500):
-        ns, reward, done = env.step(2)
-        time.sleep(0.001)
-        print(ns, reward, done)
-        # #time.sleep(.005);
-        # #print("Reward:{}".format(R));
-
-    # print(env.knocked_over_check())
-    # print(env.pushed_out_check())
-
-
-
-    for i in range(0,2000):
-        ns, reward, done = env.step(3)
-        print(ns, reward, done)
-        time.sleep(.001);
+    # for i in range(0,900):
+    #     ns, reward, done = env.step(0)
+    #     time.sleep(0.001)
+    #     print(ns, reward, done)
+    #
+    #
+    #
+    # for i in range(0,500):
+    #     ns, reward, done = env.step(2)
+    #     time.sleep(0.001)
+    #     print(ns, reward, done)
+    #     # #time.sleep(.005);
+    #     # #print("Reward:{}".format(R));
+    #
+    # # print(env.knocked_over_check())
+    # # print(env.pushed_out_check())
+    #
+    #
+    #
+    # for i in range(0,2000):
+    #     ns, reward, done = env.step(3)
+    #     print(ns, reward, done)
+    #     time.sleep(.001);
         # #print("Reward:{}".format(R));
 
     # print(env.knocked_over_check())
