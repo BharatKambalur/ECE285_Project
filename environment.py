@@ -22,6 +22,7 @@ class environment(object):
         TB2 = self.env.get_block_center_position(self.TopBlocks_IDs[1])
         TB3 = self.env.get_block_center_position(self.TopBlocks_IDs[2])
         Top_Dist = np.linalg.norm(np.subtract(TB1,self.init_TB1_pos)) + np.linalg.norm(np.subtract(TB2,self.init_TB2_pos)) + np.linalg.norm(np.subtract(TB3,self.init_TB3_pos))
+        print(Top_Dist)
         if Top_Dist > 0.01:
             return True
         else:
@@ -111,7 +112,7 @@ if __name__ == "__main__":
     print(env.get_state())
     for i in range(0,1200):
         ns, reward, done = env.step(0)
-        print(ns, reward, done)
+        #print(ns, reward, done)
 
     raw_input()
 
