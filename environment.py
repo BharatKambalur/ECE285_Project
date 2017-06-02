@@ -6,7 +6,7 @@ import matplotlib as plt
 class environment(object):
 
     def __init__(self,pybulletPath):
-        self.env = sim_environment(tW=3,tH=6,useGUI=True,pybulletPath=pybulletPath)
+        self.env = sim_environment(tW=3,tH=6,useGUI=False,pybulletPath=pybulletPath)
         self.env.set_poker_position([-1,0.0,1.47])
         
         self.GB_ID = self.env.get_good_push_block()
@@ -116,8 +116,8 @@ if __name__ == "__main__":
     ##################################################################################
     ##################### Uncomment for your own ####################################
     #pybulletPath = "/home/auggienanz/bullet3/data/" #Auggie
-    pybulletPath = "D:/ECE 285 - Advances in Robot Manipulation/bullet3-master/data/" #Bharat
-    #pybulletPath = 'C:/Users/Juan Camilo Castillo/Documents/bullet3/bullet3-master/data/' #Juan
+    #pybulletPath = "D:/ECE 285 - Advances in Robot Manipulation/bullet3-master/data/" #Bharat
+    pybulletPath = 'C:/Users/Juan Camilo Castillo/Documents/bullet3/bullet3-master/data/' #Juan
 
     #################################################################################
 

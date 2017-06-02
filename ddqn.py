@@ -78,8 +78,9 @@ if __name__ == "__main__":
     ##################################################################################
     ##################### Uncomment for your own ####################################
     #pybulletPath = "/home/auggienanz/bullet3/data/" #Auggie
-    pybulletPath = "D:/ECE 285 - Advances in Robot Manipulation/bullet3-master/data/" #Bharat
-    #pybulletPath = 'C:/Users/Juan Camilo Castillo/Documents/bullet3/bullet3-master/data/' #Juan
+    #pybulletPath = "D:/ECE 285 - Advances in Robot Manipulation/bullet3-master/data/" #Bharat
+    pybulletPath = 'C:/Users/Juan Camilo Castillo/Documents/bullet3/bullet3-master/data/' #Juan
+    outputpath = 'C:/Users/Juan Camilo Castillo/Documents/ECE 285 Robotics/save/' #Juan
 
     #################################################################################
 
@@ -89,24 +90,29 @@ if __name__ == "__main__":
     agent = DQNAgent(state_size, action_size)
     # agent.load("./save/cartpole-master.h5")
     done = False
-    batch_size = 64
-
+    batch_size = 200
+    print('Starting Simulations')
     for e in range(EPISODES):
+        print('Starting new Episode')
         state = env.reset()
         state = np.reshape(state, [1, state_size])
-        for time in range(500):
+        TotalReward = 0
+        for time in range(20000):
             # env.render()
+            #print(time)
             action = agent.act(state)
             next_state, reward, done = env.step(action)
+            TotalReward = reward + TotalReward
             next_state = np.reshape(next_state, [1, state_size])
             agent.remember(state, action, reward, next_state, done)
             state = next_state
             if done:
                 agent.update_target_model()
-                print("episode: {}/{}, score: {}, e: {:.2}"
-                      .format(e, EPISODES, time, agent.epsilon))
+                print("episode: {}/{}, Reward score: {}, e: {:.2}"
+                      .format(e, EPISODES, TotalReward, agent.epsilon))
                 break
         if len(agent.memory) > batch_size:
+            print('Learning new model')
             agent.replay(batch_size)
         # if e % 10 == 0:
-        #     agent.save("./save/cartpole.h5")
+    agent.save(outputpath + 'JengaLearn.h5')

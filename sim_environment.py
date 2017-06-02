@@ -87,6 +87,7 @@ class sim_environment():
     def __init__(self,tW=3,tH=6,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath="",outfilePath="",log_data=False,init_poker_pos=[-.5,0,2],log_mode='all'):
         self.initialize_environment(tW,tH,useGUI,usePokerBot,useGrabberBot,SIM_SECOND_STEPS,towerOrient,delta,buildTower,pybulletPath,outfilePath,log_data,init_poker_pos,log_mode);
 
+
     def initialize_environment(self,tW,tH,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath ="",outfilePath="",log_data=False,init_poker_pos=[-.5,0,2],log_mode='all'):
         #This function sets up the environment, it currently only
         if(pybulletPath != ""):
