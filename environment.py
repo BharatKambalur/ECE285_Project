@@ -22,7 +22,6 @@ class environment(object):
         TB2 = self.env.get_block_center_position(self.TopBlocks_IDs[1])
         TB3 = self.env.get_block_center_position(self.TopBlocks_IDs[2])
         Top_Dist = np.linalg.norm(np.subtract(TB1,self.init_TB1_pos)) + np.linalg.norm(np.subtract(TB2,self.init_TB2_pos)) + np.linalg.norm(np.subtract(TB3,self.init_TB3_pos))
-        print(Top_Dist)
         if Top_Dist > 0.01:
             return True
         else:
@@ -66,8 +65,8 @@ class environment(object):
                 return 0.5
 
         new_block_pos = self.env.get_block_position(self.env.get_good_push_block())
-        block_pushed_dist = old_block_pos[0] - new_block_pos[0]
-        if block_pushed_dist < 0:
+        block_pushed_dist =new_block_pos[0]- old_block_pos[0] 
+        if block_pushed_dist >(0.9*self.env.get_movement_delta()):
             return 1
         else:
             return 0
@@ -103,46 +102,50 @@ if __name__ == "__main__":
     ##################################################################################
     ##################### Uncomment for your own ####################################
     #pybulletPath = "/home/auggienanz/bullet3/data/" #Auggie
-    pybulletPath = "D:/ECE 285 - Advances in Robot Manipulation/bullet3-master/data/" #Bharat
+    #pybulletPath = "D:/ECE 285 - Advances in Robot Manipulation/bullet3-master/data/" #Bharat
+    pybulletPath = 'C:/Users/Juan Camilo Castillo/Documents/bullet3/bullet3-master/data/' #Juan
+
     #################################################################################
 
     env = environment(pybulletPath)
     start_time = time.time()
     print('Initial Env State:')
     print(env.get_state())
-    for i in range(0,1200):
+    for i in range(0,900):
         ns, reward, done = env.step(0)
-        #print(ns, reward, done)
+        time.sleep(0.001)
+        print(ns, reward, done)
 
-    raw_input()
+
 
     for i in range(0,500):
         ns, reward, done = env.step(2)
+        time.sleep(0.001)
         print(ns, reward, done)
-        #time.sleep(.005);
-        #print("Reward:{}".format(R));
+        # #time.sleep(.005);
+        # #print("Reward:{}".format(R));
 
-    print(env.knocked_over_check())
-    print(env.pushed_out_check())
+    # print(env.knocked_over_check())
+    # print(env.pushed_out_check())
 
-    raw_input()
 
-    for i in range(0,1000):
+
+    for i in range(0,2000):
         ns, reward, done = env.step(3)
         print(ns, reward, done)
-        #time.sleep(.005);
-        #print("Reward:{}".format(R));
+        time.sleep(.001);
+        # #print("Reward:{}".format(R));
 
-    print(env.knocked_over_check())
-    print(env.pushed_out_check())
+    # print(env.knocked_over_check())
+    # print(env.pushed_out_check())
 
-    total_time = time.time() - start_time
-    print('Elapsed time %f'%(total_time))
+    # total_time = time.time() - start_time
+    # print('Elapsed time %f'%(total_time))
 
-    #w,h,img = env.captureImage()
-    #print(np.shape(np.reshape(np.array(img),(w,h))))
-    #print(len(img))
-    raw_input()
+    # #w,h,img = env.captureImage()
+    # #print(np.shape(np.reshape(np.array(img),(w,h))))
+    # #print(len(img))
+
          
          
          
