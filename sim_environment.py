@@ -2,8 +2,8 @@ import pybullet as p
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-import imageio
-import pyscreenshot as IG
+#import imageio
+#import pyscreenshot as IG
 import os
 from math import sin,cos,pi,sqrt
 import time
@@ -604,7 +604,7 @@ class sim_environment():
         row = 3; #Odd if first row faces bot, even otherwise
         if(self.towerHeight <= row):
             row = self.towerHeight;
-        return center_off + (row-1)*self.towerWidth; 
+        return int(center_off + (row-1)*self.towerWidth); 
     #END OTHER PARAMETERS CODE---------------------------------------------------
     
     def place_tower(self,tW,tH,basePos,baseOrient=0):
@@ -728,12 +728,12 @@ class sim_environment():
         ROB_STEPS = 250;
         BEGIN_ORIENT = [-.5,0,2];
         block_pos = [];
-        #block_pos.append(self.get_block_center_position(26));
-        #block_pos.append(self.get_block_center_position(24));
-        #block_pos.append(self.get_block_center_position(20));
-        #block_pos.append(self.get_block_center_position(18));
-        #block_pos.append(self.get_block_center_position(14));
-        #block_pos.append(self.get_block_center_position(12));
+        block_pos.append(self.get_block_center_position(26));
+        block_pos.append(self.get_block_center_position(24));
+        block_pos.append(self.get_block_center_position(20));
+        block_pos.append(self.get_block_center_position(18));
+        block_pos.append(self.get_block_center_position(14));
+        block_pos.append(self.get_block_center_position(12));
         block_pos.append(self.get_block_center_position(0));
         block_pos.append(self.get_block_center_position(2));
         #for i in range(0,STEPS):
