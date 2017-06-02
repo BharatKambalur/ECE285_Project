@@ -38,8 +38,24 @@ class environment(object):
         else:
             return False
 
+    def exit_envelope_check(self):
+        lower_x = -1.1
+        upper_x = 0.1
+        lower_y = -0.2
+        upper_y = 0.2
+        lower_z = 1.32
+        upper_z = 1.62
+        x,y,z = self.env.get_poker_position()
+        if x<lower_x or x>upper_x:
+            return True
+        if y<lower_y or y>upper_y:
+            return True
+        if z<lower_z or z>upper_z:
+            return True
+        return False
+
     def done_check(self):
-        if self.pushed_out_check() == True or self.knocked_over_check() == True:
+        if self.pushed_out_check() == True or self.knocked_over_check() == True or self.exit_envelope_check() == True:
             return True
         else:
             return False
@@ -115,13 +131,14 @@ class environment(object):
 
     def reset_random(self):
         self.env.reset_simulation()
+        # Next Part is heuristically determined
         x_num = randint(0,300)
         y_num = randint(-100,100)
         z_num = randint(-100,100)
         random_offset = np.zeros(3)
-        random_offset[0] = x_num * self.delta
-        random_offset[1] = y_num * self.delta
-        random_offset[2] = z_num * self.delta
+        random_offset[0] = x_num * 0.001
+        random_offset[1] = y_num * 0.001
+        random_offset[2] = z_num * 0.001
         new_pos = np.add(self.original_poker_pos,random_offset)
         self.env.set_poker_position(new_pos)
         self.GB_ID = self.env.get_good_push_block()
@@ -146,13 +163,14 @@ if __name__ == "__main__":
 
     #################################################################################
 
-    env = environment(pybulletPath)
+    env = environment(pybulletPath=pybulletPath,useGUI=False,movement_delta=0.003)
     start_time = time.time()
     print('Initial Env State:')
     print(env.get_state())
-    for i in range(50):
-        time.sleep(0.5)
-        env.reset_random()
+    env.exit_envelope_check()
+    # for i in range(50):
+    #     time.sleep(0.5)
+    #     env.reset_random()
 
     # for i in range(0,900):
     #     ns, reward, done = env.step(0)
