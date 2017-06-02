@@ -95,6 +95,18 @@ class environment(object):
         reward = self.calc_reward(old_poker_pos,old_block_pos)
         return ns, reward, done
 
+    def reset(self):
+        self.env.reset_simulation()
+        self.env.set_poker_position([-1,0.0,1.47])
+
+        self.GB_ID = self.env.get_good_push_block()
+        self.TopBlocks_IDs = self.env.get_top_blocks_IDS()
+        self.init_GB_pos = self.env.get_block_position(self.GB_ID)
+        self.init_TB1_pos = self.env.get_block_center_position(self.TopBlocks_IDs[0])
+        self.init_TB2_pos = self.env.get_block_center_position(self.TopBlocks_IDs[1])
+        self.init_TB3_pos = self.env.get_block_center_position(self.TopBlocks_IDs[2])
+        self.poker_reached_close = self.poker_close_check()
+
 if __name__ == "__main__":
     # The default execution is simply poking one block through and
     # then making the tower fall over by moving to the left and right
@@ -102,8 +114,8 @@ if __name__ == "__main__":
     ##################################################################################
     ##################### Uncomment for your own ####################################
     #pybulletPath = "/home/auggienanz/bullet3/data/" #Auggie
-    #pybulletPath = "D:/ECE 285 - Advances in Robot Manipulation/bullet3-master/data/" #Bharat
-    pybulletPath = 'C:/Users/Juan Camilo Castillo/Documents/bullet3/bullet3-master/data/' #Juan
+    pybulletPath = "D:/ECE 285 - Advances in Robot Manipulation/bullet3-master/data/" #Bharat
+    #pybulletPath = 'C:/Users/Juan Camilo Castillo/Documents/bullet3/bullet3-master/data/' #Juan
 
     #################################################################################
 
