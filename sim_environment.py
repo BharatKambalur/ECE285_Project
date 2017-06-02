@@ -2,8 +2,8 @@ import pybullet as p
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-import imageio
-import pyscreenshot as IG
+#import imageio
+#import pyscreenshot as IG
 import os
 from math import sin,cos,pi,sqrt
 import time
@@ -84,10 +84,11 @@ class sim_environment():
     def __init__(self):
         self.initialize_environment(tW=3,tH=6);
         
-    def __init__(self,tW=3,tH=6,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .01,buildTower=True,pybulletPath="",outfilePath="",log_data=False):
-        self.initialize_environment(tW,tH,useGUI,usePokerBot,useGrabberBot,SIM_SECOND_STEPS,towerOrient,delta,buildTower,pybulletPath,outfilePath,log_data);
+    def __init__(self,tW=3,tH=6,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath="",outfilePath="",log_data=False,init_poker_pos=[-.5,0,2],log_mode='all'):
+        self.initialize_environment(tW,tH,useGUI,usePokerBot,useGrabberBot,SIM_SECOND_STEPS,towerOrient,delta,buildTower,pybulletPath,outfilePath,log_data,init_poker_pos,log_mode);
 
-    def initialize_environment(self,tW,tH,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath ="",outfilePath="",log_data=False):
+
+    def initialize_environment(self,tW,tH,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath ="",outfilePath="",log_data=False,init_poker_pos=[-.5,0,2],log_mode='all'):
         #This function sets up the environment, it currently only
         if(pybulletPath != ""):
             self.pybulletPath = pybulletPath;
@@ -132,6 +133,7 @@ class sim_environment():
         
         self.max_delta = delta;
         self.log_data = log_data;
+        self.log_mode = log_mode;
     
         #Set sim parameters
         if(self.useGUI):
@@ -204,17 +206,12 @@ class sim_environment():
         
         #Run a very short period of time, just so everything settles into position
         #p.setRealTimeSimulation(enableRealTimeSimulation = 1);
-        for i in range(100):
+        for i in range(0,10):
             self.step_sim();
                 
                 
         print('Getting initial positions of all objects');
-        if(self.usePokerBot):
-            self.pokerBotInitBO = p.getBasePositionAndOrientation(self.pokerbotID);
-            self.pokerInitBO = [[0,0,0],[0,0,0,1]];#If we are using the poker bot, no need to init position, it is connected to robot
-        else:
-            self.pokerBotInitBO = [[0,0,0],[0,0,0,1]];
-            #self.pokerInitBO = p.getBasePositionAndOrientation(self.pokerID);
+        self.set_poker_reset_position(init_poker_pos);
         
         if(self.useGrabberBot):
             #Grabber gripper will always be attached to grabber bot, no need to init BO
@@ -229,60 +226,73 @@ class sim_environment():
         else:
             print('Not building tower, this will probably cause issues');
               
+        self.begin_log(); #Logging is always performed, it is only saved to file if log_data is used
         
         print('Environment setup complete');
     def log_step(self,val):
+        #This stores the action into the list
         self.data_string += val;
-    def flush_log(self):
-        filePath = self.outputFilesPath + self.RUN_FILE_NAME + str(self.cur_file_num) + '.bin';
+    def flush_log(self,filePath = ''):
+        #Use this function to write log string to file, 
+        if(filePath==''):
+            filePath = self.outputFilesPath + self.RUN_FILE_NAME + str(self.cur_file_num) + '.bin';
         file = open(filePath,'wb');
         file.write(self.data_string);
+        self.clear_log();
+        file.close();  
+    def clear_log(self):
+        #Use this function to clear log string, use if you are handling file writes externally
         self.data_string = '';
-        file.close();
-    def recreate_run(self,filePath):
-        log_setting = self.log_data;
-        self.log_data = False;
+    def begin_log(self):
+        #This should be called during reset, you should not need to call it yourself
+        self.clear_log();
+        self.cur_file_num+=1;
+    def get_log_string(self):
+        return self.data_string;
         
         
-        file = open(filePath,'r');
-        string = file.read();
-        file.close();
+    def recreate_run(self,filePath='',string=''):
+        #log_setting = self.log_data;
+        #self.log_data = False;
+        
+        if(string=='' and filePath!=''):
+            file = open(filePath,'r');
+            string = file.read();
+            file.close();
         
         self.reset_simulation()
         for c in string:
             if(c == 'F'):
-                self.move_poker_px();
+                self.move_poker_px(False);
             elif(c == 'B'):
-                self.move_poker_nx();
+                self.move_poker_nx(False);
             elif(c == 'L'):
-                self.move_poker_py();
+                self.move_poker_py(False);
             elif(c == 'R'):
-                self.move_poker_ny();
+                self.move_poker_ny(False);
             elif(c == 'U'):
-                self.move_poker_pz();
+                self.move_poker_pz(False);
             elif(c == 'D'):
-                self.move_poker_nz();
+                self.move_poker_nz(False);
             elif(c == 'S'):
-                self.move_poker_stationary();
+                self.move_poker_stationary(False);
             else:
                 print('Error reading run file, unrecognized character %s'%(c));
             
                 
-        self.log_data = log_setting;
+        #self.log_data = log_setting;
         
     def reset_simulation(self,ignore_log = False):       
-        if(self.usePokerBot):
-            p.resetBasePositionAndOrientation(self.pokerbotID,self.pokerBotInitBO[0],self.pokerBotInitBO[1]);
-            for i in range(0,p.getNumJoints(self.pokerbotID)):
-                p.setJointMotorControl2(self.pokerbotID,i,controlMode=p.POSITION_CONTROL,targetPosition=self.pokerBotInitOrient[i],positionGain=1);
-        else:
-            p.resetBasePositionAndOrientation(self.pokerID,self.pokerInitBO[0],self.pokerInitBO[1]);
+        
+        self.reset_poker_position();
+        
+        
+        
+        
         
         if(self.useGrabberBot):
             #Grabber gripper will always be attached to grabber bot, no need to init BO
-            p.resetBasePositionAndOrientation(self.grabberbotID,self.grabberBotInitBO[0],self.grabberBotInitBO[1]);
-            for i in range(0,p.getNumJoints(self.grabberbotID)):
-                p.setJointMotorControl2(self.grabberbotID,i,controlMode=p.POSITION_CONTROL,targetPosition=self.grabberBotInitOrient[i],positionGain=1);
+            self.reset_grabber_position();
             
         if(self.buildTower):    
             for i in range(0,self.towerBlocks):
@@ -294,18 +304,49 @@ class sim_environment():
         for i in range(0,100):
             self.step_sim();
             
-            
+        
+        #log_data now only has an effect on if data is stored to file, it is always collected        
         if(self.log_data and not ignore_log):    
             self.flush_log();
-            self.cur_file_num+=1;
             
-    #BEGIN CONTROL POKER CODE---------------------------------------------------
-    def reset_poker_position(self):
+        self.begin_log();
+            
+    #BEGIN RESET STUFF CODE
+    def set_poker_reset_position(self,position=[9454]):
+        
+        if(position[0] == 9454):#Use current position
+            position = self.getBasePositionAndOrientation(self.pokerID)[0];
+            
+        self.pokerInitBO[0] = position;
+        
         if(self.usePokerBot):
-            self.pokerBotDesiredJoint = self.pokerBotResetJoint;
-            for i in range(0,250):
-                self.step_sim();
-    def set_poker_position(self,position):
+            self.set_poker_position(position,1000000);
+            for i in range(0,300):
+                    self.step_sim();
+            self.set_pokerbot_reset_joints();
+            
+    def set_pokerbot_reset_joints(self,joints=[10]):
+        if(joints[0]== 10): #Use current robot positions
+            for i in range(0,7):
+                self.pokerBotResetJoint[i] = p.getJointState(self.pokerbotID,i)[0];
+        else:               #Use given robot positions
+            self.pokerBotResetJoint = joints;
+            
+    def reset_poker_position(self,realTime=False):
+        if(self.usePokerBot):
+            if(realTime):
+                if(self.usePokerBot):
+                    self.pokerBotDesiredJoint = self.pokerBotResetJoint;
+                    for i in range(0,250):
+                        self.step_sim();
+            else:
+                for i in range(0,7):
+                    p.resetJointState(self.pokerbotID,i,self.pokerBotResetJoint[i]);
+        else: #Pokerbot not used, just change poker position
+            p.resetBasePositionAndOrientation(self.pokerID,self.pokerInitBO[0],self.pokerInitBO[1]);
+                
+    #BEGIN CONTROL POKER CODE---------------------------------------------------
+    def set_poker_position(self,position,force=-1):
         #This sets the position based on block end, not block center
         #if(True):
         if(not self.usePokerBot):
@@ -326,7 +367,7 @@ class sim_environment():
                 
             OR = p.getQuaternionFromEuler([0,pi/2,0]);
             endPos = self.get_poker_back_position_and_orientation(use_actual_OR=False)[0];
-            cenPos = self.get_poker_position(False)[0];
+            cenPos = self.get_poker_position(False);
             #cenPos = self.get_poker_center_position();
             diff = np.subtract(endPos,cenPos);
             #print('DIFF');
@@ -346,7 +387,7 @@ class sim_environment():
             
                 self.pokerBotDesiredJoint = jointPos;
                 #print(jointPos);
-                self.set_pokerBot_position(jointPos);
+                self.set_pokerBot_position(jointPos,force);
                 #Do inverse kinematics on robot
                 for i in range(0,10):
                     self.step_sim();
@@ -372,17 +413,19 @@ class sim_environment():
         print('set poker orientation not yet implemented');
         #return [0,0,0,1];
         
-    def set_pokerBot_position(self,jointPos):
+    def set_pokerBot_position(self,jointPos,force=-1):
+        if force < 0:
+            force = 1000;
         for i in range(0,7):
-                p.setJointMotorControl2(self.pokerbotID,i,controlMode=p.POSITION_CONTROL,targetPosition=jointPos[i],force=1000,positionGain=.05,velocityGain=1);
+                p.setJointMotorControl2(self.pokerbotID,i,controlMode=p.POSITION_CONTROL,targetPosition=jointPos[i],force=force,positionGain=.05,velocityGain=1);
     def move_poker(self,offset):
         
         #if(True):
         if(not self.usePokerBot):
             pos,OR = p.getBasePositionAndOrientation(self.pokerID);
             p.resetBasePositionAndOrientation(self.pokerID,np.add(pos,offset),OR);
-            for i in range(0,self.STEP_SIMS):
-               self.step_sim();
+            #for i in range(0,self.STEP_SIMS):
+            #    self.step_sim();
                 
         else:
             #pos,OR = self.get_poker_back_position_and_orientation(False);
@@ -408,38 +451,38 @@ class sim_environment():
             
             
             
-    def move_poker_px(self):
-        if(self.log_data):
+    def move_poker_px(self,log=True):
+        if(log):
             self.log_step('F');
         self.move_poker([self.max_delta,0,0]);
         
-    def move_poker_nx(self):
-        if(self.log_data): 
+    def move_poker_nx(self,log=True):
+        if(log): 
             self.log_step('B');
         self.move_poker([-self.max_delta,0,0]);
         
-    def move_poker_py(self):
-        if(self.log_data): 
+    def move_poker_py(self,log=True):
+        if(log): 
             self.log_step('L');
         self.move_poker([0,self.max_delta,0]);
         
-    def move_poker_ny(self):
-        if(self.log_data): 
+    def move_poker_ny(self,log=True):
+        if(log): 
             self.log_step('R');
         self.move_poker([0,-self.max_delta,0]);
     
-    def move_poker_pz(self):
-        if(self.log_data): 
+    def move_poker_pz(self,log=True):
+        if(log): 
             self.log_step('U');
         self.move_poker([0,0,self.max_delta]);
         
-    def move_poker_nz(self):
-        if(self.log_data): 
+    def move_poker_nz(self,log=True):
+        if(log): 
             self.log_step('D');
         self.move_poker([0,0,-self.max_delta]);
         
-    def move_poker_stationary(self):
-        if(self.log_data): 
+    def move_poker_stationary(self,log=True):
+        if(log): 
             self.log_step('S');
         self.move_poker([0,0,0]);
         
@@ -511,7 +554,9 @@ class sim_environment():
         
         #This additional math is to get tip of end effector, not center
         rot = np.reshape(p.getMatrixFromQuaternion(OR),[3,3]);
-        block_offset = np.reshape([BLOCK_LENGTH/2,0,0],[1,3]);
+        block_offset_t = np.reshape([BLOCK_LENGTH/2,0,0],[1,3]);
+        #TODO: MATRIX MULTIPLICATION
+        block_offset = np.matmul(block_offset_t,rot);
         pos_offset = pos - block_offset;#Minus in this case because we want the back of the block, not the front
         return pos_offset[0],OR;
         
@@ -640,7 +685,45 @@ class sim_environment():
             env.move_poker_px();
         elapsed_time = time.time() - start_time;
         print('Proof of Concept complete, elapsed time = %ds'%(elapsed_time));
-
+    def test_poker(self):
+        start_time = time.time();
+        self.set_poker_reset_position([-1,0,2]);
+        self.reset_simulation();
+        for i in range(0,1000):
+            self.move_poker_px();
+        string1 = self.get_log_string();    
+        self.reset_simulation();
+            
+        for i in range(0,1000):
+            self.move_poker_pz();
+        string2 = self.get_log_string();  
+        self.reset_simulation();   #self.set_poker_reset_position([0,0,3]); 
+            
+        #for i in range(0,1000):
+        #    self.move_poker_stationary();
+        
+        self.reset_simulation();
+        self.recreate_run(string = string1);
+        self.reset_simulation();
+        self.recreate_run(string = string2);
+        self.reset_simulation();
+        
+        self.set_poker_reset_position([0,0,3]);
+        self.reset_simulation();
+        for i in range(0,1000):
+            self.move_poker_px();
+            
+        self.reset_simulation();
+            
+        for i in range(0,1000):
+            self.move_poker_pz(); 
+        self.reset_simulation();    
+            
+        for i in range(0,1000):
+            self.move_poker_stationary();
+        self.reset_simulation();
+        
+        
     def test_pokerbot(self):
         STEPS=0;
         ROB_STEPS = 250;
@@ -652,36 +735,30 @@ class sim_environment():
         block_pos.append(self.get_block_center_position(18));
         block_pos.append(self.get_block_center_position(14));
         block_pos.append(self.get_block_center_position(12));
-        block_pos.append(self.get_block_center_position(8));
-        block_pos.append(self.get_block_center_position(6));
-        for i in range(0,STEPS):
-            self.step_sim();
+        block_pos.append(self.get_block_center_position(0));
+        block_pos.append(self.get_block_center_position(2));
+        #for i in range(0,STEPS):
+        #    self.step_sim();
             
-            
-        self.set_poker_position(BEGIN_ORIENT);
-        for i in range(0,STEPS):
-                self.step_sim();
-        print('lol');
-        raw_input();
-        for i in range(0,7):
-            self.pokerBotResetJoint[i] = p.getJointState(self.pokerbotID,i)[0];
-            print(self.pokerBotResetJoint[i]);
-            
+        print('RESETTING POSITION');  
+        self.set_poker_reset_position(BEGIN_ORIENT);
+        print('POSITION RESET');
             
         for cur_pos in block_pos:
-            self.reset_poker_position();
+            self.reset_poker_position(realTime=True);
             for i in range(0,STEPS):
                 self.step_sim();
             print('reset pos');
-            for i in range(0,7):
-                curstate = p.getJointState(self.pokerbotID,i)[0];
-                print(curstate);
+            #for i in range(0,7):
+            #    curstate = p.getJointState(self.pokerbotID,i)[0];
+            #    print(curstate);
             self.set_poker_position([-.6,cur_pos[1],cur_pos[2]]);
             for i in range(0,STEPS):
                 self.step_sim();
             print('moving to block');
             for j in range(0,ROB_STEPS):
                 self.move_poker_px();
+                print(np.subtract(self.get_poker_position(),self.get_block_position(8)));
             print('Reversing');
             for j in range(0,ROB_STEPS/2):
                 self.move_poker_nx();
