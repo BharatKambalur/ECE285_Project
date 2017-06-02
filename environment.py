@@ -6,8 +6,9 @@ import matplotlib as plt
 
 class environment(object):
 
-    def __init__(self,pybulletPath, useGUI):
+    def __init__(self,pybulletPath, useGUI, movement_delta):
         self.env = sim_environment(tW=3,tH=6,useGUI=useGUI,pybulletPath=pybulletPath)
+        self.env.set_movement_delta(movement_delta)
         self.delta = self.env.get_movement_delta()
         self.original_poker_pos = [-1,0.0,1.47]
         self.env.set_poker_reset_position(self.original_poker_pos)
