@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import random
-import gym
+from environment import environment
 import numpy as np
 from collections import deque
 from keras.models import Sequential
@@ -75,10 +75,17 @@ class DQNAgent:
 
 
 if __name__ == "__main__":
+    ##################################################################################
+    ##################### Uncomment for your own ####################################
+    #pybulletPath = "/home/auggienanz/bullet3/data/" #Auggie
+    pybulletPath = "D:/ECE 285 - Advances in Robot Manipulation/bullet3-master/data/" #Bharat
+    #pybulletPath = 'C:/Users/Juan Camilo Castillo/Documents/bullet3/bullet3-master/data/' #Juan
 
-    env = gym.make('CartPole-v1')
-    state_size = env.observation_space.shape[0]
-    action_size = env.action_space.n
+    #################################################################################
+
+    env = environment(pybulletPath)
+    state_size = 6
+    action_size = 6
     agent = DQNAgent(state_size, action_size)
     # agent.load("./save/cartpole-master.h5")
     done = False
@@ -90,7 +97,7 @@ if __name__ == "__main__":
         for time in range(500):
             # env.render()
             action = agent.act(state)
-            next_state, reward, done, _ = env.step(action)
+            next_state, reward, done = env.step(action)
             next_state = np.reshape(next_state, [1, state_size])
             agent.remember(state, action, reward, next_state, done)
             state = next_state
