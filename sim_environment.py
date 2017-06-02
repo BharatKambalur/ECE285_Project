@@ -84,10 +84,10 @@ class sim_environment():
     def __init__(self):
         self.initialize_environment(tW=3,tH=6);
         
-    def __init__(self,tW=3,tH=6,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath="",outfilePath="",log_data=False,init_poker_pos=[-.5,0,2]):
-        self.initialize_environment(tW,tH,useGUI,usePokerBot,useGrabberBot,SIM_SECOND_STEPS,towerOrient,delta,buildTower,pybulletPath,outfilePath,log_data,init_poker_pos);
+    def __init__(self,tW=3,tH=6,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath="",outfilePath="",log_data=False,init_poker_pos=[-.5,0,2],log_mode='all'):
+        self.initialize_environment(tW,tH,useGUI,usePokerBot,useGrabberBot,SIM_SECOND_STEPS,towerOrient,delta,buildTower,pybulletPath,outfilePath,log_data,init_poker_pos,log_mode);
 
-    def initialize_environment(self,tW,tH,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath ="",outfilePath="",log_data=False,init_poker_pos=[-.5,0,2]):
+    def initialize_environment(self,tW,tH,useGUI=False,usePokerBot=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath ="",outfilePath="",log_data=False,init_poker_pos=[-.5,0,2],log_mode='all'):
         #This function sets up the environment, it currently only
         if(pybulletPath != ""):
             self.pybulletPath = pybulletPath;
@@ -132,6 +132,7 @@ class sim_environment():
         
         self.max_delta = delta;
         self.log_data = log_data;
+        self.log_mode = log_mode;
     
         #Set sim parameters
         if(self.useGUI):
@@ -224,46 +225,61 @@ class sim_environment():
         else:
             print('Not building tower, this will probably cause issues');
               
+        self.begin_log(); #Logging is always performed, it is only saved to file if log_data is used
         
         print('Environment setup complete');
     def log_step(self,val):
+        #This stores the action into the list
         self.data_string += val;
-    def flush_log(self):
-        filePath = self.outputFilesPath + self.RUN_FILE_NAME + str(self.cur_file_num) + '.bin';
+    def flush_log(self,filePath = ''):
+        #Use this function to write log string to file, 
+        if(filePath==''):
+            filePath = self.outputFilesPath + self.RUN_FILE_NAME + str(self.cur_file_num) + '.bin';
         file = open(filePath,'wb');
         file.write(self.data_string);
+        self.clear_log();
+        file.close();  
+    def clear_log(self):
+        #Use this function to clear log string, use if you are handling file writes externally
         self.data_string = '';
-        file.close();
-    def recreate_run(self,filePath):
-        log_setting = self.log_data;
-        self.log_data = False;
+    def begin_log(self):
+        #This should be called during reset, you should not need to call it yourself
+        self.clear_log();
+        self.cur_file_num+=1;
+    def get_log_string(self):
+        return self.data_string;
         
         
-        file = open(filePath,'r');
-        string = file.read();
-        file.close();
+    def recreate_run(self,filePath='',string=''):
+        #log_setting = self.log_data;
+        #self.log_data = False;
+        
+        if(string=='' and filePath!=''):
+            file = open(filePath,'r');
+            string = file.read();
+            file.close();
         
         self.reset_simulation()
         for c in string:
             if(c == 'F'):
-                self.move_poker_px();
+                self.move_poker_px(False);
             elif(c == 'B'):
-                self.move_poker_nx();
+                self.move_poker_nx(False);
             elif(c == 'L'):
-                self.move_poker_py();
+                self.move_poker_py(False);
             elif(c == 'R'):
-                self.move_poker_ny();
+                self.move_poker_ny(False);
             elif(c == 'U'):
-                self.move_poker_pz();
+                self.move_poker_pz(False);
             elif(c == 'D'):
-                self.move_poker_nz();
+                self.move_poker_nz(False);
             elif(c == 'S'):
-                self.move_poker_stationary();
+                self.move_poker_stationary(False);
             else:
                 print('Error reading run file, unrecognized character %s'%(c));
             
                 
-        self.log_data = log_setting;
+        #self.log_data = log_setting;
         
     def reset_simulation(self,ignore_log = False):       
         
@@ -287,10 +303,12 @@ class sim_environment():
         for i in range(0,100):
             self.step_sim();
             
-            
+        
+        #log_data now only has an effect on if data is stored to file, it is always collected        
         if(self.log_data and not ignore_log):    
             self.flush_log();
-            self.cur_file_num+=1;
+            
+        self.begin_log();
             
     #BEGIN RESET STUFF CODE
     def set_poker_reset_position(self,position=[9454]):
@@ -432,38 +450,38 @@ class sim_environment():
             
             
             
-    def move_poker_px(self):
-        if(self.log_data):
+    def move_poker_px(self,log=True):
+        if(log):
             self.log_step('F');
         self.move_poker([self.max_delta,0,0]);
         
-    def move_poker_nx(self):
-        if(self.log_data): 
+    def move_poker_nx(self,log=True):
+        if(log): 
             self.log_step('B');
         self.move_poker([-self.max_delta,0,0]);
         
-    def move_poker_py(self):
-        if(self.log_data): 
+    def move_poker_py(self,log=True):
+        if(log): 
             self.log_step('L');
         self.move_poker([0,self.max_delta,0]);
         
-    def move_poker_ny(self):
-        if(self.log_data): 
+    def move_poker_ny(self,log=True):
+        if(log): 
             self.log_step('R');
         self.move_poker([0,-self.max_delta,0]);
     
-    def move_poker_pz(self):
-        if(self.log_data): 
+    def move_poker_pz(self,log=True):
+        if(log): 
             self.log_step('U');
         self.move_poker([0,0,self.max_delta]);
         
-    def move_poker_nz(self):
-        if(self.log_data): 
+    def move_poker_nz(self,log=True):
+        if(log): 
             self.log_step('D');
         self.move_poker([0,0,-self.max_delta]);
         
-    def move_poker_stationary(self):
-        if(self.log_data): 
+    def move_poker_stationary(self,log=True):
+        if(log): 
             self.log_step('S');
         self.move_poker([0,0,0]);
         
@@ -669,17 +687,25 @@ class sim_environment():
     def test_poker(self):
         start_time = time.time();
         self.set_poker_reset_position([-1,0,2]);
+        self.reset_simulation();
         for i in range(0,1000):
             self.move_poker_px();
-            
+        string1 = self.get_log_string();    
         self.reset_simulation();
             
         for i in range(0,1000):
-            self.move_poker_pz(); 
-        self.reset_simulation();   self.set_poker_reset_position([0,0,3]); 
+            self.move_poker_pz();
+        string2 = self.get_log_string();  
+        self.reset_simulation();   #self.set_poker_reset_position([0,0,3]); 
             
-        for i in range(0,1000):
-            self.move_poker_stationary();
+        #for i in range(0,1000):
+        #    self.move_poker_stationary();
+        
+        self.reset_simulation();
+        self.recreate_run(string = string1);
+        self.reset_simulation();
+        self.recreate_run(string = string2);
+        self.reset_simulation();
         
         self.set_poker_reset_position([0,0,3]);
         self.reset_simulation();
