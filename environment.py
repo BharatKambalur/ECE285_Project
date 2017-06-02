@@ -133,6 +133,8 @@ class environment(object):
         self.init_TB3_pos = self.env.get_block_center_position(self.TopBlocks_IDs[2])
         self.poker_reached_close = self.poker_close_check()
 
+        return self.get_state()
+
 if __name__ == "__main__":
     # The default execution is simply poking one block through and
     # then making the tower fall over by moving to the left and right
