@@ -115,10 +115,9 @@ class environment(object):
 
     def reset_random(self):
         self.env.reset_simulation()
-        print(self.get_state())
-        x_num = randint(0,600)
-        y_num = randint(-300,300)
-        z_num = randint(-150,150)
+        x_num = randint(0,300)
+        y_num = randint(-100,100)
+        z_num = randint(-100,100)
         random_offset = np.zeros(3)
         random_offset[0] = x_num * self.delta
         random_offset[1] = y_num * self.delta
