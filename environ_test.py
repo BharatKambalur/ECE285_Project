@@ -5,6 +5,70 @@ import pybullet as p
 
 env = 0;
 
+
+def simulation_examples():
+
+    global env
+
+    tW              = 1;        #towerWidth
+    tH              = 1;        #towerHeight
+    useGUI          = True;     #If should use GUI or not
+    usePokerBot     = False;     #If Poker Bot is enabled
+    useGrabber      = False;
+    useGrabberBot   = False;    #If Grabber Bot is Enabled
+    SIM_STEPS       = 1000;     #Number of sim steps per 1 real time second
+    towerOrient     = 0;        #Rotation of tower (CURRENTLY ONLY WORKS WITH 0)
+    delta           = .003;     #XYZ resolution when using move_poker_px etc.
+    buildTower      = True;     #Should tower be built, probably true
+    log_data        = False;    #should to program log data for each run (Touchy, must be used properly
+
+
+
+    resultFolder = 'C:/Users/SBWork/Documents/Files/school/SP17/ECE285/Project/results/';
+    pybulletPath = "C:/Users/SBWork/Documents/pythonLibs/bullet3/data/";
+
+
+    env = sim_environment(tW=tW,tH=tH,useGUI=useGUI,usePokerBot=usePokerBot,useGrabberBot=useGrabberBot,SIM_SECOND_STEPS=SIM_STEPS,towerOrient=towerOrient,delta=delta,buildTower=buildTower,pybulletPath=pybulletPath,outfilePath=resultFolder,log_data=log_data);
+
+    env.set_poker_reset_position([0,0,3]);
+    env.reset_simulation();
+    print(env.get_poker_position());
+    raw_input();
+    
+    
+    #test_pokerbot();
+    #env.reset_simulation();
+    #test_poker();
+
+    raw_input();
+    env.reset_simulation();
+    #print('GONNA TEST POKER2');
+    #test_pokerbot();
+
+    print('GONNA TEST POKER');
+    raw_input();
+    test_poker();
+    raw_input();
+
+
+
+    env.recreate_run(outFile+ 'exp_0.bin');
+
+
+        
+    total_time = time.time() - start_time;
+    print('Elapsed time %f'%(total_time));
+    #print(env.get_poker_center_position_and_orientation());
+    #print(env.get_poker_position_and_orientation());
+    #print(env.get_block_position_and_orientation(7));
+    #print(env.get_block_center_position_and_orientation(7));
+
+    #for i in range(0,3):
+    #    env.run_jenga_proof_of_concept();
+    #    env.reset_simulation();
+
+    raw_input();
+
 def test_poker():
     start_time = time.time();
     env.set_poker_reset_position([-1,0,2]);
@@ -46,7 +110,7 @@ def test_poker():
         
 def test_pokerbot():
     STEPS=0;
-    ROB_STEPS = 250;
+    ROB_STEPS = 1000;
     BEGIN_ORIENT = [-.5,0,2];
     block_pos = [];
     block_pos.append(env.get_block_center_position(26));
@@ -78,7 +142,7 @@ def test_pokerbot():
         print('moving to block');
         for j in range(0,ROB_STEPS):
             env.move_poker_px();
-            print(np.subtract(env.get_poker_position(),env.get_block_position(8)));
+            #print(np.subtract(env.get_poker_position(),env.get_block_position(8)));
         print('Reversing');
         for j in range(0,ROB_STEPS/2):
             env.move_poker_nx();
@@ -87,61 +151,7 @@ def test_pokerbot():
         
     env.set_poker_position(BEGIN_ORIENT);
 
-def simulation_examples():
 
-    global env
-
-    tW              = 3;        #towerWidth
-    tH              = 9;        #towerHeight
-    useGUI          = True;     #If should use GUI or not
-    usePokerBot     = False;     #If Poker Bot is enabled
-    useGrabberBot   = False;    #If Grabber Bot is Enabled
-    SIM_STEPS       = 1000;     #Number of sim steps per 1 real time second
-    towerOrient     = 0;        #Rotation of tower (CURRENTLY ONLY WORKS WITH 0)
-    delta           = .003;     #XYZ resolution when using move_poker_px etc.
-    buildTower      = True;     #Should tower be built, probably true
-    log_data        = False;    #should to program log data for each run (Touchy, must be used properly
-
-
-
-    resultFolder = 'C:/Users/SBWork/Documents/Files/school/SP17/ECE285/Project/results/';
-    pybulletPath = "C:/Users/SBWork/Documents/pythonLibs/bullet3/data/";
-
-
-    env = sim_environment(tW=tW,tH=tH,useGUI=useGUI,usePokerBot=usePokerBot,useGrabberBot=useGrabberBot,SIM_SECOND_STEPS=SIM_STEPS,towerOrient=towerOrient,delta=delta,buildTower=buildTower,pybulletPath=pybulletPath,outfilePath=resultFolder,log_data=log_data);
-
-    test_pokerbot();
-    env.reset_simulation();
-    test_poker();
-
-    raw_input();
-    env.reset_simulation();
-    #print('GONNA TEST POKER2');
-    #test_pokerbot();
-
-    print('GONNA TEST POKER');
-    raw_input();
-    test_poker();
-    raw_input();
-
-
-
-    env.recreate_run(outFile+ 'exp_0.bin');
-
-
-        
-    total_time = time.time() - start_time;
-    print('Elapsed time %f'%(total_time));
-    #print(env.get_poker_center_position_and_orientation());
-    #print(env.get_poker_position_and_orientation());
-    #print(env.get_block_position_and_orientation(7));
-    #print(env.get_block_center_position_and_orientation(7));
-
-    #for i in range(0,3):
-    #    env.run_jenga_proof_of_concept();
-    #    env.reset_simulation();
-
-    raw_input();
     
 if __name__ == '__main__':
     simulation_examples();
