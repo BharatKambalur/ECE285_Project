@@ -8,6 +8,7 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 from keras import backend as K
 from environment import environment
+import time as timer
 
 
 if __name__ == "__main__":
@@ -20,20 +21,20 @@ if __name__ == "__main__":
 
     #################################################################################
 
-    env = environment(pybulletPath)
+    env = environment(pybulletPath,useGUI = True, movement_delta = 0.003)
     state_size = 6
     action_size = 6
     agent = DQNAgent(state_size, action_size)
-    agent.load("./run_results/JengaLearn.h5")
-
-	state = env.reset()
-	state = np.reshape(state, [1, state_size])
-	print('Starting Policy Rolloout from learned weights')
-
-	for time in range(2000)
-		action = np.argmax(agent.model.predict(state)[0])
-		next_state, reward, done = env.step(action)
-		next_state = np.reshape(next_state, [1, state_size])
-		agent.remember(state, action, reward, next_state, done)
-		state = next_state
+    agent.load("./run_results/JengaLearn_2.h5")
+    state = env.reset_random()
+    state = np.reshape(state, [1, state_size])
+    timer.sleep(1)
+    print('Starting Policy Rolloout from learned weights')
+    for time in range(1000):
+        action = np.argmax(agent.model.predict(state)[0])
+        next_state, reward, done = env.step(action)
+        timer.sleep(0.005)
+        next_state = np.reshape(next_state, [1, state_size])
+        agent.remember(state, action, reward, next_state, done)
+        state = next_state
 

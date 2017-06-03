@@ -7,6 +7,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 from keras import backend as K
+import time as timer
 
 EPISODES = 5000
 
@@ -84,7 +85,7 @@ if __name__ == "__main__":
 
     #################################################################################
 
-    env = environment(pybulletPath)
+    env = environment(pybulletPath = pybulletPath,useGUI = False,movement_delta = 0.003)
     state_size = 6
     action_size = 6
     agent = DQNAgent(state_size, action_size)
@@ -92,12 +93,13 @@ if __name__ == "__main__":
     done = False
     batch_size = 200
     print('Starting Simulations')
+    starttime = timer.time();
     for e in range(EPISODES):
-        print('Starting new Episode')
-        state = env.reset()
+        #print('Starting new Episode')
+        state = env.reset_random()
         state = np.reshape(state, [1, state_size])
         TotalReward = 0
-        for time in range(20000):
+        for time in range(2000):
             # env.render()
             #print(time)
             action = agent.act(state)
@@ -112,7 +114,8 @@ if __name__ == "__main__":
                       .format(e, EPISODES, TotalReward, agent.epsilon))
                 break
         if len(agent.memory) > batch_size:
-            print('Learning new model')
+            #print('Learning new model')
             agent.replay(batch_size)
         # if e % 10 == 0:
-    agent.save(outputpath + 'JengaLearn.h5')
+    print((timer.time() - starttime)/EPISODES)
+    agent.save(outputpath + 'JengaLearn_2.h5')
