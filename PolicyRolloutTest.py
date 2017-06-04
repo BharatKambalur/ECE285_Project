@@ -25,7 +25,7 @@ if __name__ == "__main__":
     state_size = 6
     action_size = 6
     agent = DQNAgent(state_size, action_size)
-    agent.load("./run_results/JengaLearn_2.h5")
+    agent.load("./run_results/JengaLearn_5.h5")
     state = env.reset_random()
     state = np.reshape(state, [1, state_size])
     timer.sleep(1)

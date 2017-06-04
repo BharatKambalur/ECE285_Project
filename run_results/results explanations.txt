@@ -1,0 +1,4 @@
+2. with bias, 5000 episodes, 2000 steps, 
+3. same as above, except recording rewards
+4. same parameters except with 10000 episodes
+5.same as above, 2500 episodes, discount gamma = .5
