@@ -10,12 +10,12 @@ def simulation_examples():
 
     global env
 
-    tW              = 1;        #towerWidth
-    tH              = 1;        #towerHeight
+    tW              = 3;        #towerWidth
+    tH              = 9;        #towerHeight
     useGUI          = True;     #If should use GUI or not
     usePokerBot     = False;     #If Poker Bot is enabled
-    useGrabber      = False;
-    useGrabberBot   = False;    #If Grabber Bot is Enabled
+    useGripper      = True;
+    useGripperBot   = False;    #If Gripper Bot is Enabled
     SIM_STEPS       = 1000;     #Number of sim steps per 1 real time second
     towerOrient     = 0;        #Rotation of tower (CURRENTLY ONLY WORKS WITH 0)
     delta           = .003;     #XYZ resolution when using move_poker_px etc.
@@ -28,19 +28,13 @@ def simulation_examples():
     pybulletPath = "C:/Users/SBWork/Documents/pythonLibs/bullet3/data/";
 
 
-    env = sim_environment(tW=tW,tH=tH,useGUI=useGUI,usePokerBot=usePokerBot,useGrabberBot=useGrabberBot,SIM_SECOND_STEPS=SIM_STEPS,towerOrient=towerOrient,delta=delta,buildTower=buildTower,pybulletPath=pybulletPath,outfilePath=resultFolder,log_data=log_data);
-
-    env.set_poker_reset_position([0,0,3]);
-    env.reset_simulation();
-    print(env.get_poker_position());
-    raw_input();
+    env = sim_environment(tW=tW,tH=tH,useGUI=useGUI,usePokerBot=usePokerBot,useGripper=useGripper,useGripperBot=useGripperBot,SIM_SECOND_STEPS=SIM_STEPS,towerOrient=towerOrient,delta=delta,buildTower=buildTower,pybulletPath=pybulletPath,outfilePath=resultFolder,log_data=log_data);
     
     
     #test_pokerbot();
     #env.reset_simulation();
-    #test_poker();
+    test_poker();
 
-    raw_input();
     env.reset_simulation();
     #print('GONNA TEST POKER2');
     #test_pokerbot();

@@ -39,14 +39,14 @@ class sim_environment():
     pybulletPath = "C:/Users/SBWork/Documents/pythonLibs/bullet3/data/"
 
     pokerBotInitOrient = [0,0,0,0,0,0,0]
-    grabberBotInitOrient = [0,0,0,0,0,0,0]
+    gripperBotInitOrient = [0,0,0,0,0,0,0]
     towerWidth = 0
     towerHeight = 0
     towerBlocks = 0
     towerPos = [0,0,0]
     towerOrient = 0
     useGUI = False
-    useGrabberBot = False
+    useGripperBot = False
     usePokerBot = False
     buildTower = True
     SIM_SECOND_STEPS = 0
@@ -61,13 +61,13 @@ class sim_environment():
     
     
     pokerbot_initial_pos    = [-POKER_POS_OFFSET,0,TABLE_HEIGHT-.2]
-    grabbot_initial_pos     = [GRABBER_POS_OFFSET,0,TABLE_HEIGHT-.2]
+    gripperbot_initial_pos     = [GRABBER_POS_OFFSET,0,TABLE_HEIGHT-.2]
     tower_initial_pos       = [0,0,TABLE_HEIGHT]
     
     tableID    = 0
     pokerbotID = 0
     pokerID    = 0
-    grabberbotID = 0
+    gripperbotID = 0
     gripperID = 0
             
     blockList = []
@@ -75,19 +75,19 @@ class sim_environment():
     
     pokerBotInitBO = [[0,0,0],[0,0,0,1]]
     pokerInitBO = [[-1,0.0,1.47],[0,0,0,1]]#If we are using the poker bot, no need to init position, it is connected to robot
-    grabberInitBO = [[-1,0.0,1.47],[0,0,0,1]]
-    grabberBotInitBO = [[0,0,0],[0,0,0,1]]
+    gripperInitBO = [[1,0.0,1.47],[0,0,0,1]]
+    gripperBotInitBO = [[0,0,0],[0,0,0,1]]
     towerInitBO = []
     pokerBotRestJoint = [0,pi/2,0,-pi/2,0,0,0]
     pokerBotDesiredJoint = [0,0,0,0,0,0,0]
     pokerBotResetJoint = pokerBotDesiredJoint
     pokerBotDesiredPos = [0,0,0]
         
-    def __init__(self,tW=3,tH=6,useGUI=False,usePokerBot=False,useGrabber=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath="",outfilePath="",log_data=False,init_poker_pos=[-1,0,2],init_grabber_pos=[.5,0,2],log_mode='all'):
-        self.initialize_environment(tW,tH,useGUI,usePokerBot,useGrabber,useGrabberBot,SIM_SECOND_STEPS,towerOrient,delta,buildTower,pybulletPath,outfilePath,log_data,init_poker_pos,init_grabber_pos,log_mode)
+    def __init__(self,tW=3,tH=6,useGUI=False,usePokerBot=False,useGripper=False,useGripperBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath="",outfilePath="",log_data=False,init_poker_pos=[-1,0,2],init_gripper_pos=[.5,0,2],log_mode='all'):
+        self.initialize_environment(tW,tH,useGUI,usePokerBot,useGripper,useGripperBot,SIM_SECOND_STEPS,towerOrient,delta,buildTower,pybulletPath,outfilePath,log_data,init_poker_pos,init_gripper_pos,log_mode)
 
 
-    def initialize_environment(self,tW,tH,useGUI=False,usePokerBot=False,useGrabber=False,useGrabberBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath ="",outfilePath="",log_data=False,init_poker_pos=[-1,0,2],init_grabber_pos=[.5,0,2],log_mode='all'):
+    def initialize_environment(self,tW,tH,useGUI=False,usePokerBot=False,useGripper=False,useGripperBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath ="",outfilePath="",log_data=False,init_poker_pos=[-1,0,2],init_gripper_pos=[1,0,2],log_mode='all'):
         #This function sets up the environment, it currently only
         if(pybulletPath != ""):
             self.pybulletPath = pybulletPath
@@ -123,8 +123,8 @@ class sim_environment():
         self.towerPos       = [0,0,TABLE_HEIGHT]
         self.towerOrient    = 0
         self.useGUI         = useGUI
-        self.useGrabber     = (useGrabber or useGrabberBot) #If grabberbot enabled, I want the grabber
-        self.useGrabberBot  = useGrabberBot
+        self.useGripper     = (useGripper or useGripperBot) #If gripperbot enabled, I want the gripper
+        self.useGripperBot  = useGripperBot
         self.usePokerBot    = usePokerBot
         self.SIM_SECOND_STEPS = SIM_SECOND_STEPS
         self.buildTower     = buildTower
@@ -134,6 +134,9 @@ class sim_environment():
         self.max_delta = delta
         self.log_data = log_data
         self.log_mode = log_mode
+        
+        self.pokerInitBO[0] = init_poker_pos;
+        self.gripperInitBO[0] = init_gripper_pos;
     
         #Set sim parameters
         if(self.useGUI):
@@ -172,15 +175,19 @@ class sim_environment():
         
         #self.pokerID    = p.loadSDF(gripperPath)[0]
         
-        if(self.useGrabber):
-            self.gripperID = p.loadSDF(self.gripperPath)[0]
+        if(self.useGripper):
+            if(self.useGripperBot):
+                self.gripperID = p.loadSDF(self.gripperPath)[0]
+            else:
+                self.gripperID = p.loadSDF(self.gripperPath,useFixedBase=True)[0]
+            p.resetBasePositionAndOrientation(self.gripperID,self.gripperInitBO[0],p.getQuaternionFromEuler([pi/2,0,-pi/2]));
         else:
             self.gripperID = 0
         
-        if(self.useGrabberBot):
-            self.grabberbotID = p.loadURDF(self.kukaPath,self.grabbot_initial_pos,useFixedBase=True)
+        if(self.useGripperBot):
+            self.gripperbotID = p.loadURDF(self.kukaPath,self.gripper_initial_pos,useFixedBase=True)
         else:
-            self.grabberbotID = 0
+            self.gripperbotID = 0
         
         if(buildTower):
             self.blockList = self.place_tower(self.towerWidth,self.towerHeight,self.towerPos,self.towerOrient)
@@ -198,11 +205,11 @@ class sim_environment():
                 p.setJointMotorControl2(self.pokerbotID,i,controlMode=p.POSITION_CONTROL,targetPosition=self.pokerBotInitOrient[i],positionGain=1)
             #p.setJointMotorControl2(self.pokerbotID,6,controlMode=p.POSITION_CONTROL,targetPosition=pi/2,positionGain=1)
         
-        if(self.useGrabberBot):
-            cid = p.createConstraint(self.grabberbotID,6,self.gripperID,-1,p.JOINT_FIXED,[0,0,0],[0,0.005,0.2],[0,.01,0.2])
+        if(self.useGripperBot):
+            cid = p.createConstraint(self.gripperbotID,6,self.gripperID,-1,p.JOINT_FIXED,[0,0,0],[0,0.005,0.2],[0,.01,0.2])
             p.changeConstraint(cid,maxForce=10000000)
-            for i in range(0,p.getNumJoints(self.grabberbotID)):
-                p.setJointMotorControl2(self.grabberbotID,i,controlMode=p.POSITION_CONTROL,targetPosition=self.grabberBotInitOrient[i],positionGain=1)
+            for i in range(0,p.getNumJoints(self.gripperbotID)):
+                p.setJointMotorControl2(self.gripperbotID,i,controlMode=p.POSITION_CONTROL,targetPosition=self.gripperBotInitOrient[i],positionGain=1)
                 
             closeGripper(self.gripperID)
                 
@@ -216,14 +223,14 @@ class sim_environment():
         print('Getting initial positions of all objects')
         self.set_poker_reset_position(init_poker_pos)
         
-        if(self.useGrabber):
-            self.set_grabber_reset_position(init_grabber_pos)
+        if(self.useGripper):
+            self.set_gripper_reset_position(init_gripper_pos)
         
-        if(self.useGrabberBot):
-            #Grabber gripper will always be attached to grabber bot, no need to init BO
-            self.grabberBotInitBO = p.getBasePositionAndOrientation(self.grabberBotID)
+        if(self.useGripperBot):
+            #Gripper gripper will always be attached to gripper bot, no need to init BO
+            self.gripperBotInitBO = p.getBasePositionAndOrientation(self.gripperBotID)
         else:
-            self.grabberBotInitBO = [[0,0,0],[0,0,0,1]]
+            self.gripperBotInitBO = [[0,0,0],[0,0,0,1]]
         
         if(buildTower):        
             self.towerInitBO = []
@@ -296,9 +303,9 @@ class sim_environment():
         
         
         
-        if(self.useGrabberBot):
-            #Grabber gripper will always be attached to grabber bot, no need to init BO
-            self.reset_grabber_position()
+        if(self.useGripperBot):
+            #Gripper gripper will always be attached to gripper bot, no need to init BO
+            self.reset_gripper_position()
             
         if(self.buildTower):    
             for i in range(0,self.towerBlocks):
@@ -319,23 +326,23 @@ class sim_environment():
             
     #BEGIN RESET STUFF CODE
     
-    def set_grabber_reset_position(self,position=[9454]):
+    def set_gripper_reset_position(self,position=[9454]):
         if(position[0] == 9454):#Use current position
-            position = self.getBasePositionAndOrientation(self.grabberID)[0]
+            position = self.getBasePositionAndOrientation(self.gripperID)[0]
             
-        self.grabberInitBO[0] = position
+        self.gripperInitBO[0] = position
         
-        if(self.useGrabberBot):
-            self.set_grabber_position(position,1000000)
+        if(self.useGripperBot):
+            self.set_gripper_position(position,1000000)
             for i in range(0,300):
                     self.step_sim()
-            self.set_grabberbot_reset_joints()
-    def set_grabberbot_reset_joints(self,joints=[10]):
+            self.set_gripperbot_reset_joints()
+    def set_gripperbot_reset_joints(self,joints=[10]):
         if(joints[0]== 10): #Use current robot positions
             for i in range(0,7):
-                self.grabberBotResetJoint[i] = p.getJointState(self.grabberbotID,i)[0]
+                self.gripperBotResetJoint[i] = p.getJointState(self.gripperbotID,i)[0]
         else:               #Use given robot positions
-            self.grabberBotResetJoint = joints
+            self.gripperBotResetJoint = joints
     def set_poker_reset_position(self,position=[9454]):
         
         if(position[0] == 9454):#Use current position
@@ -476,7 +483,36 @@ class sim_environment():
         for i in range(0,self.STEP_SIMS):
             self.step_sim()
             
+    def move_gripper(self,offset):
+        
+        #if(True):
+        if(not self.useGripperBot):
+            pos,OR = p.getBasePositionAndOrientation(self.gripperID)
+            p.resetBasePositionAndOrientation(self.gripperID,np.add(pos,offset),OR)
+            #for i in range(0,self.STEP_SIMS):
+            #    self.step_sim()
+                
+        else:
+            #pos,OR = self.get_poker_back_position_and_orientation(False)
+            #new_pos = np.add(pos,offset)
+            new_pos = np.add(self.gripperBotDesiredPos,offset)
             
+            if(not self.check_range_gripper(new_pos)):
+                new_pos = self.gripperBotDesiredPos
+            
+            self.gripperBotDesiredPos = new_pos
+            #print(new_pos)
+            jd = [.00001,.00001,.00001,.00001,.00001,.00001,.00001]
+            #jd = [100,100,100,100,100,100,100]
+            OR = p.getQuaternionFromEuler([0,pi/2,0])
+            #print(new_pos)
+            jointPos = p.calculateInverseKinematics(self.gripperbotID,6,targetPosition=new_pos,targetOrientation=OR,jointDamping=jd,restPoses=self.gripperBotRestJoint)
+            self.gripperBotDesiredJoint = jointPos
+            #print(jointPos)
+            self.set_gripperBot_position(jointPos)
+            
+        for i in range(0,self.STEP_SIMS):
+            self.step_sim()    
             
     def move_poker_px(self,log=True):
         if(log):
@@ -513,6 +549,42 @@ class sim_environment():
             self.log_step('S')
         self.move_poker([0,0,0])
         
+        
+    def move_gripper_px(self,log=True):
+        if(log):
+            self.log_step('F')
+        self.move_gripper([self.max_delta,0,0])
+        
+    def move_gripper_nx(self,log=True):
+        if(log): 
+            self.log_step('B')
+        self.move_gripper([-self.max_delta,0,0])
+        
+    def move_gripper_py(self,log=True):
+        if(log): 
+            self.log_step('L')
+        self.move_gripper([0,self.max_delta,0])
+        
+    def move_gripper_ny(self,log=True):
+        if(log): 
+            self.log_step('R')
+        self.move_gripper([0,-self.max_delta,0])
+    
+    def move_gripper_pz(self,log=True):
+        if(log): 
+            self.log_step('U')
+        self.move_gripper([0,0,self.max_delta])
+        
+    def move_gripper_nz(self,log=True):
+        if(log): 
+            self.log_step('D')
+        self.move_gripper([0,0,-self.max_delta])
+        
+    def move_gripper_stationary(self,log=True):
+        if(log): 
+            self.log_step('S')
+        self.move_gripper([0,0,0])
+        
     #END CONTROL POKER CODE---------------------------------------------------
     def step_sim(self):
         if(self.usePokerBot):
@@ -524,6 +596,23 @@ class sim_environment():
         
         #Desired Offset
         init_pos = np.add(self.pokerbot_initial_pos,[0,0,ARM_FIRST_HEIGHT])
+        d_o= np.subtract(position,init_pos)
+        distance = d_o[0]*d_o[0] + d_o[1]*d_o[1] + d_o[2]*d_o[2]
+        distance = sqrt(distance)
+        
+        #print("Need to determine bounds that robot can reliably use")
+        if(distance > ARM_REACH):
+            return False
+        
+        if(distance < ARM_REACH_MIN):
+            return False
+        
+        return True
+        
+    def check_range_gripper(self,position):
+        
+        #Desired Offset
+        init_pos = np.add(self.gripperbot_initial_pos,[0,0,ARM_FIRST_HEIGHT])
         d_o= np.subtract(position,init_pos)
         distance = d_o[0]*d_o[0] + d_o[1]*d_o[1] + d_o[2]*d_o[2]
         distance = sqrt(distance)
@@ -586,28 +675,28 @@ class sim_environment():
         block_offset = np.matmul(block_offset_t,rot)
         pos_offset = pos - block_offset#Minus in this case because we want the back of the block, not the front
         return pos_offset[0],OR
-        
-        
+          
     def get_block_center_position(self,ID):
         return p.getBasePositionAndOrientation(self.blockList[ID])[0]
     def get_block_center_position_and_orientation(self,ID):
         return p.getBasePositionAndOrientation(self.blockList[ID])
+    
+    def get_block_back_position(self,ID):
+        return self.get_block_back_position_and_orientation(ID)[0]
         
-    def get_grabber_position(self):
-        if(self.useGrabberBot):
-            return p.getBasePositionAndOrientation(self.grabberBotID)[0]
-        else:
-            return [0,0,0]  
-    def get_grabber_orientation(self):
-        if(self.useGrabberBot):
-            return p.getBasePositionAndOrientation(self.grabberBotID)[1]
-        else:
-            return [0,0,0,1]  
-    def get_grabber_position_and_orientation(self):
-        if(self.useGrabberBot):
-            return p.getBasePositionAndOrientation(self.grabberBotID)
-        else:
-            return [[0,0,0],[0,0,0,1]]
+    def get_block_back_position_and_orientation(self,ID):
+        pos,OR = get_block_center_position_and_orientation(ID)
+        op_offset = np.subtract(pos,self.get_block_position(ID))
+        back_pos = np.add(pos,op_offset)
+        return back_pos,OR
+
+    
+    def get_gripper_position(self):
+        return p.getBasePositionAndOrientation(self.gripperID)[0] 
+    def get_gripper_orientation(self):
+        return p.getBasePositionAndOrientation(self.gripperID)[1]
+    def get_gripper_position_and_orientation(self):
+        return p.getBasePositionAndOrientation(self.gripperID)
     
 
     #END GET POS/ORIENT CODE-------------------------------------------------------
