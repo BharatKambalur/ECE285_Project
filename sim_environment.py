@@ -11,7 +11,7 @@ import time
 
 ARM_REACH = .85
 ARM_REACH_MIN = .1
-ARM_FIRST_HEIGHT = .2
+ARM_FIRST_HEIGHT = .3
 
 TABLE_HEIGHT = 1.30
 POKER_POS_OFFSET = 1.5
@@ -216,7 +216,7 @@ class sim_environment():
             #Poker s
             pokerOrient = p.getQuaternionFromEuler([pi/2,0,0])
             cid = p.createConstraint(self.pokerbotID,6,self.pokerID,-1,p.JOINT_FIXED,[0,0,0],[0,0,0],[-POKER_LENGTH/2,0,0],childFrameOrientation=p.getQuaternionFromEuler([pi/2,pi,pi/2]))
-            p.changeConstraint(cid,maxForce=10000000)
+            p.changeConstraint(cid,maxForce=100)
             for i in range(0,p.getNumJoints(self.pokerbotID)):
                 p.setJointMotorControl2(self.pokerbotID,i,controlMode=p.POSITION_CONTROL,targetPosition=self.pokerBotInitOrient[i],positionGain=1)
             #p.setJointMotorControl2(self.pokerbotID,6,controlMode=p.POSITION_CONTROL,targetPosition=pi/2,positionGain=1)
@@ -224,7 +224,7 @@ class sim_environment():
         if(self.useGripperBot):
             gripper_rotation = p.getQuaternionFromEuler([0,0,0]);
             cid = p.createConstraint(self.gripperbotID,6,self.gripperID,-1,p.JOINT_FIXED,[0,0,0],[0,0.005,0.2],[0,.01,0.2],childFrameOrientation=gripper_rotation)
-            p.changeConstraint(cid,maxForce=10000000)
+            p.changeConstraint(cid,maxForce=5000)
             for i in range(0,p.getNumJoints(self.gripperbotID)):
                 p.setJointMotorControl2(self.gripperbotID,i,controlMode=p.POSITION_CONTROL,targetPosition=self.gripperBotInitOrient[i],positionGain=1)
                 
@@ -314,9 +314,11 @@ class sim_environment():
         
     def reset_simulation(self,ignore_log = False):       
         
+        
         self.reset_poker_position()
-        
-        
+        #raw_input();
+        for i in range(0,5):
+            self.step_sim()
         
         
         
@@ -371,9 +373,13 @@ class sim_environment():
             self.set_poker_position(position,1000000)
             for i in range(0,300):
                     self.step_sim()
+            #OR = self.pokerInitBO[1]
+            #jd = [.00001,.00001,.00001,.00001,.00001,.00001,.00001]
+            #joints = p.calculateInverseKinematics(self.pokerbotID,6,targetPosition=position,targetOrientation=OR,jointDamping=jd,restPoses=self.pokerBotRestJoint)
             self.set_pokerbot_reset_joints()
             
     def set_pokerbot_reset_joints(self,joints=[10]):
+        
         if(joints[0]== 10): #Use current robot positions
             for i in range(0,7):
                 self.pokerBotResetJoint[i] = p.getJointState(self.pokerbotID,i)[0]
@@ -381,15 +387,23 @@ class sim_environment():
             self.pokerBotResetJoint = joints
             
     def reset_poker_position(self,realTime=False):
+        self.pokerBotDesiredJoint = self.pokerBotResetJoint
+        self.pokerBotDesiredPos = np.subtract(self.pokerInitBO[0],[POKER_LENGTH,0,0]);
         if(self.usePokerBot):
+            cid = p.createConstraint(self.pokerbotID,6,self.pokerID,-1,p.JOINT_FIXED,[0,0,0],[0,0,0],[-POKER_LENGTH/2,0,0],childFrameOrientation=p.getQuaternionFromEuler([pi/2,pi,pi/2]))
+            p.changeConstraint(cid,maxForce=0)
+            for i in range(0,10):
+                self.step_sim()
+            p.changeConstraint(cid,maxForce=10)
+            for i in range(0,300):
+                self.step_sim()
             if(realTime):
-                if(self.usePokerBot):
-                    self.pokerBotDesiredJoint = self.pokerBotResetJoint
-                    for i in range(0,250):
-                        self.step_sim()
+                for i in range(0,250):
+                    self.step_sim()
             else:
                 for i in range(0,7):
                     p.resetJointState(self.pokerbotID,i,self.pokerBotResetJoint[i])
+                    
         else: #Pokerbot not used, just change poker position
         
             offset = np.subtract(self.get_poker_center_position(),self.get_poker_position());
@@ -398,13 +412,15 @@ class sim_environment():
  
 
     def reset_gripper_position(self,realTime=False):
+        self.gripperBotDesiredJoint = self.gripperBotResetJoint
+        self.gripperBotDesiredPos = self.gripperInitBO[0]
         if(self.useGripperBot):
+            
             if(realTime):
-                if(self.useGripperBot):
-                    self.gripperBotDesiredJoint = self.gripperBotResetJoint
-                    for i in range(0,250):
-                        self.step_sim()
+                for i in range(0,250):
+                    self.step_sim()
             else:
+                
                 for i in range(0,7):
                     p.resetJointState(self.gripperbotID,i,self.gripperBotResetJoint[i])
         else: #Pokerbot not used, just change poker position
@@ -678,6 +694,7 @@ class sim_environment():
         #Desired Offset
         init_pos = np.add(self.pokerbot_initial_pos,[0,0,ARM_FIRST_HEIGHT])
         d_o= np.subtract(position,init_pos)
+        
         distance = d_o[0]*d_o[0] + d_o[1]*d_o[1] + d_o[2]*d_o[2]
         distance = sqrt(distance)
         

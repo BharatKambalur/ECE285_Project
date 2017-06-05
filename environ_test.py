@@ -15,7 +15,7 @@ def simulation_examples():
     tW              = 3;        #towerWidth
     tH              = 6;        #towerHeight
     useGUI          = True;     #If should use GUI or not
-    usePokerBot     = True;     #If Poker Bot is enabled
+    usePokerBot     = False;     #If Poker Bot is enabled
     useGripper      = True;
     useGripperBot   = True;    #If Gripper Bot is Enabled
     SIM_STEPS       = 1000;     #Number of sim steps per 1 real time second
@@ -37,24 +37,19 @@ def simulation_examples():
 
     env = sim_environment(tW=tW,tH=tH,useGUI=useGUI,usePokerBot=usePokerBot,useGripper=useGripper,useGripperBot=useGripperBot,SIM_SECOND_STEPS=SIM_STEPS,towerOrient=towerOrient,delta=delta,buildTower=buildTower,pybulletPath=pybulletPath,outfilePath=resultFolder,log_data=log_data,init_poker_pos=init_poker_pos,init_gripper_pos=init_gripper_pos,use_slow_motion=use_slow_motion,slow_factor=slow_factor);
     
+    
+    #This code is the latest example I have shown you, it uses both to poker and the gripper, poker can be held by gripper
     test_cooperation();
-    return;
     #test_pokerbot();
     #env.reset_simulation();
     test_poker();
 
     env.reset_simulation();
-    #print('GONNA TEST POKER2');
-    #test_pokerbot();
 
-    print('GONNA TEST POKER');
-    raw_input();
-    test_poker();
-    raw_input();
+    #raw_input();
+    test_pokerbot();
 
-
-
-    env.recreate_run(outFile+ 'exp_0.bin');
+    #env.recreate_run(outFile+ 'exp_0.bin');
 
 
         
@@ -73,15 +68,27 @@ def simulation_examples():
 
 def test_poker():
     start_time = time.time();
-    env.set_poker_reset_position([-.6,0,2]);
+    env.set_poker_reset_position([-.6,0,1.56]);
+    
     env.reset_simulation();
+    print('Post reset 1 desired joint, pre move px');
     for i in range(0,700):
         env.move_poker_px();
-    string1 = env.get_log_string();    
+        
+        
+    for i in range(0,1000):
+        env.move_poker_stationary();
+    string1 = env.get_log_string();
+    
     env.reset_simulation();
+    print('Post reset 2 desired joint');
+    for i in range(0,700):
+        env.move_poker_px();
         
     for i in range(0,700):
-        env.move_poker_pz();
+        env.move_poker_nx();
+    for i in range(0,1000):
+        env.move_poker_stationary();
     string2 = env.get_log_string();  
     env.reset_simulation();   #env.set_poker_reset_position([0,0,3]); 
         
@@ -94,20 +101,7 @@ def test_poker():
     env.recreate_run(string = string2);
     env.reset_simulation();
     
-    env.set_poker_reset_position([0,0,3]);
-    env.reset_simulation();
-    for i in range(0,1000):
-        env.move_poker_px();
-        
-    env.reset_simulation();
-        
-    for i in range(0,1000):
-        env.move_poker_pz(); 
-    env.reset_simulation();    
-        
-    for i in range(0,1000):
-        env.move_poker_stationary();
-    env.reset_simulation();
+    
         
 def test_cooperation():
     print("Demonstrating our idea co-operative case");
@@ -142,28 +136,24 @@ def test_cooperation():
     for i in range(0,150):
             env.move_gripper_px();
     #env.set_gripper_position([.2,0,2],force = 500);
-    for i in range(0,150):
-            env.move_gripper_nx();
+    for i in range(0,50):
+            env.move_gripper_nz();
     
     env.open_gripper();
     
     for i in range(0,100):
         env.step_sim();
         
-    for i in range(0,150):
-            env.move_gripper_px();
+    for i in range(0,200):
+            env.move_gripper_pz();
+        
     
     
-    raw_input();
 def test_pokerbot():
     STEPS=0;
     ROB_STEPS = 1000;
     BEGIN_ORIENT = [-.5,0,2];
     block_pos = [];
-    block_pos.append(env.get_block_center_position(26));
-    block_pos.append(env.get_block_center_position(24));
-    block_pos.append(env.get_block_center_position(20));
-    block_pos.append(env.get_block_center_position(18));
     block_pos.append(env.get_block_center_position(14));
     block_pos.append(env.get_block_center_position(12));
     block_pos.append(env.get_block_center_position(0));
