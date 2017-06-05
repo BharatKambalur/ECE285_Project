@@ -55,7 +55,7 @@ class sim_environment():
     buildTower = True
     SIM_SECOND_STEPS = 0
     max_delta = 0
-    STEP_SIMS = 1#Number of simulation steps to perform each movement, needs to be >1 for stability
+    STEP_SIMS = 3#Number of simulation steps to perform each movement, needs to be >1 for stability
     client = 0
     
     log_data = False
@@ -88,6 +88,8 @@ class sim_environment():
     pokerBotDesiredPos = [0,0,0]
     pokerBotInitOrient = pokerBotRestJoint
     
+    poker_bot_constraintID = 0;
+    
     gripperBotRestJoint = [0,pi/2,0,-pi/2,0,0,0]
     gripperBotDesiredJoint = [0,0,0,0,0,0,0]
     gripperBotResetJoint = gripperBotDesiredJoint
@@ -99,6 +101,10 @@ class sim_environment():
 
 
     def initialize_environment(self,tW,tH,useGUI=False,usePokerBot=False,useGripper=False,useGripperBot=False,SIM_SECOND_STEPS=1000,towerOrient=0,delta = .001,buildTower=True,pybulletPath ="",outfilePath="",log_data=False,init_poker_pos=[-1,0,2],init_gripper_pos=[1,0,2],log_mode='all',use_slow_motion=False,slow_factor=0):
+        
+        GUI_ID = -1;
+        DIRECT_ID = -1;
+        
         #This function sets up the environment, it currently only
         init_time = time.time();
         if(pybulletPath != ""):
@@ -156,6 +162,8 @@ class sim_environment():
         #p.set
     
         #Set sim parameters
+        
+        
         if(self.useGUI):
             self.client = p.connect(p.GUI)
         else:
@@ -215,8 +223,8 @@ class sim_environment():
         if(self.usePokerBot):
             #Poker s
             pokerOrient = p.getQuaternionFromEuler([pi/2,0,0])
-            cid = p.createConstraint(self.pokerbotID,6,self.pokerID,-1,p.JOINT_FIXED,[0,0,0],[0,0,0],[-POKER_LENGTH/2,0,0],childFrameOrientation=p.getQuaternionFromEuler([pi/2,pi,pi/2]))
-            p.changeConstraint(cid,maxForce=100)
+            self.poker_bot_constraintID = p.createConstraint(self.pokerbotID,6,self.pokerID,-1,p.JOINT_FIXED,[0,0,0],[0,0,0],[-POKER_LENGTH/2,0,0],childFrameOrientation=p.getQuaternionFromEuler([pi/2,pi,pi/2]))
+            p.changeConstraint(self.poker_bot_constraintID,maxForce=100)
             for i in range(0,p.getNumJoints(self.pokerbotID)):
                 p.setJointMotorControl2(self.pokerbotID,i,controlMode=p.POSITION_CONTROL,targetPosition=self.pokerBotInitOrient[i],positionGain=1)
             #p.setJointMotorControl2(self.pokerbotID,6,controlMode=p.POSITION_CONTROL,targetPosition=pi/2,positionGain=1)
@@ -258,7 +266,12 @@ class sim_environment():
         self.reset_simulation();
         total_time = time.time() - init_time;
         
+        
+        
+        
         print('Environment setup complete, took: %s seconds'%(total_time))
+    
+
     def log_step(self,val):
         #This stores the action into the list
         self.data_string += val
@@ -390,11 +403,10 @@ class sim_environment():
         self.pokerBotDesiredJoint = self.pokerBotResetJoint
         self.pokerBotDesiredPos = np.subtract(self.pokerInitBO[0],[POKER_LENGTH,0,0]);
         if(self.usePokerBot):
-            cid = p.createConstraint(self.pokerbotID,6,self.pokerID,-1,p.JOINT_FIXED,[0,0,0],[0,0,0],[-POKER_LENGTH/2,0,0],childFrameOrientation=p.getQuaternionFromEuler([pi/2,pi,pi/2]))
-            p.changeConstraint(cid,maxForce=0)
+            p.changeConstraint(self.poker_bot_constraintID,maxForce = 0)
             for i in range(0,10):
                 self.step_sim()
-            p.changeConstraint(cid,maxForce=10)
+            p.changeConstraint(self.poker_bot_constraintID,maxForce = 10000)
             for i in range(0,300):
                 self.step_sim()
             if(realTime):
@@ -540,6 +552,9 @@ class sim_environment():
         print('set poker orientation not yet implemented')
         #return [0,0,0,1]
         
+    def set_block_position(self,ID,position):
+        OR = self.towerInitBO[ID][1]
+        p.resetBasePositionAndOrientation(self.blockList[ID],position,OR)
     def set_pokerBot_position(self,jointPos,force=-1):
         if force < 0:
             force = 1000
@@ -680,7 +695,21 @@ class sim_environment():
         if(log): 
             self.log_step('S')
         self.move_gripper([0,0,0])
+    
+
+
+    def offset_block(self,ID,amount):
+        cenPos = self.get_block_center_position(ID);
+        endPos = self.get_block_back_position(ID);
         
+        diff = np.subtract(endPos,cenPos)
+        diff = diff / np.linalg.norm(diff)
+        
+        offset_v = diff * amount;
+        newPos = np.add(cenPos,offset_v)
+        
+        self.set_block_position(ID,newPos)
+    
     #END CONTROL POKER CODE---------------------------------------------------
     def step_sim(self):
         if(self.usePokerBot):
@@ -783,7 +812,7 @@ class sim_environment():
         return self.get_block_back_position_and_orientation(ID)[0]
         
     def get_block_back_position_and_orientation(self,ID):
-        pos,OR = get_block_center_position_and_orientation(ID)
+        pos,OR = self.get_block_center_position_and_orientation(ID)
         op_offset = np.subtract(pos,self.get_block_position(ID))
         back_pos = np.add(pos,op_offset)
         return back_pos,OR

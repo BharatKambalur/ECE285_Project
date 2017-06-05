@@ -15,7 +15,7 @@ def simulation_examples():
     tW              = 3;        #towerWidth
     tH              = 6;        #towerHeight
     useGUI          = True;     #If should use GUI or not
-    usePokerBot     = False;     #If Poker Bot is enabled
+    usePokerBot     = True;     #If Poker Bot is enabled
     useGripper      = True;
     useGripperBot   = True;    #If Gripper Bot is Enabled
     SIM_STEPS       = 1000;     #Number of sim steps per 1 real time second
@@ -32,22 +32,30 @@ def simulation_examples():
 
 
     resultFolder = os.path.dirname(os.path.abspath(__file__)) + '/results/';
-    pybulletPath = "C:/ProgramData/Anaconda2/Lib/bullet3/data/";
+    #pybulletPath = "C:/ProgramData/Anaconda2/Lib/bullet3/data/";
+    pybulletPath = "C:/Users/SBWork/Documents/pythonLibs/bullet3/data/"
 
 
     env = sim_environment(tW=tW,tH=tH,useGUI=useGUI,usePokerBot=usePokerBot,useGripper=useGripper,useGripperBot=useGripperBot,SIM_SECOND_STEPS=SIM_STEPS,towerOrient=towerOrient,delta=delta,buildTower=buildTower,pybulletPath=pybulletPath,outfilePath=resultFolder,log_data=log_data,init_poker_pos=init_poker_pos,init_gripper_pos=init_gripper_pos,use_slow_motion=use_slow_motion,slow_factor=slow_factor);
-    
-    
-    #This code is the latest example I have shown you, it uses both to poker and the gripper, poker can be held by gripper
-    test_cooperation();
-    #test_pokerbot();
-    #env.reset_simulation();
-    test_poker();
 
     env.reset_simulation();
+    test_gripper()
+    #This code is the latest example I have shown you, it uses both to poker and the gripper, poker can be held by gripper
+    start_time=time.time()
+
+    env.reset_simulation();
+    #test_cooperation();
+
+    #env.reset_simulation();
+    #test_pokerbot();
+    #env.reset_simulation();
+    #test_poker();
+
+    #env.reset_simulation();
+    
 
     #raw_input();
-    test_pokerbot();
+    #test_pokerbot();
 
     #env.recreate_run(outFile+ 'exp_0.bin');
 
@@ -101,7 +109,22 @@ def test_poker():
     env.recreate_run(string = string2);
     env.reset_simulation();
     
-    
+def test_gripper():
+        env.offset_block(7,.2)
+        pos = env.get_block_back_position(7)
+        print(pos)
+        env.set_gripper_position([.6,0,pos[2]])
+        env.open_gripper()
+        for i in range(0,20):
+            env.step_sim()
+        for i in range(0,100):
+            env.move_gripper_nx()
+        env.close_gripper()
+        for i in range(0,20):
+            env.step_sim()
+        
+        for i in range(0,100):
+            env.move_gripper_px()    
         
 def test_cooperation():
     print("Demonstrating our idea co-operative case");
