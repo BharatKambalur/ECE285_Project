@@ -2,3 +2,8 @@
 3. same as above, except recording rewards
 4. same parameters except with 10000 episodes
 5.same as above, 2500 episodes, discount gamma = .5
+6. changed reward function to ignore the done case for the half portruded state, 
+added a proportinality gain to the bias terms, and added a restrciton of zero rewards when the blocks below and above good push block are moved
+7.increased the envelope in for the done case in the x direction
+8. removed the bias term only gaining, +1 if it pushes the block over
+9. removed bias term and made it such that the NN learns over all 4000 iterations, or done case (larger epochs)
