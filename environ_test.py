@@ -3,6 +3,8 @@ import numpy as np
 import time
 import pybullet as p
 
+import os
+
 env = 0;
 
 
@@ -11,26 +13,32 @@ def simulation_examples():
     global env
 
     tW              = 3;        #towerWidth
-    tH              = 9;        #towerHeight
+    tH              = 6;        #towerHeight
     useGUI          = True;     #If should use GUI or not
-    usePokerBot     = False;     #If Poker Bot is enabled
+    usePokerBot     = True;     #If Poker Bot is enabled
     useGripper      = True;
-    useGripperBot   = False;    #If Gripper Bot is Enabled
+    useGripperBot   = True;    #If Gripper Bot is Enabled
     SIM_STEPS       = 1000;     #Number of sim steps per 1 real time second
     towerOrient     = 0;        #Rotation of tower (CURRENTLY ONLY WORKS WITH 0)
     delta           = .003;     #XYZ resolution when using move_poker_px etc.
     buildTower      = True;     #Should tower be built, probably true
     log_data        = False;    #should to program log data for each run (Touchy, must be used properly
+    init_poker_pos  = [-2,0,2];
+    init_gripper_pos = [.8,0,1.5];
+    log_mode        = 'ALL'
+    use_slow_motion = False;
+    slow_factor = 5;
 
 
 
-    resultFolder = 'C:/Users/SBWork/Documents/Files/school/SP17/ECE285/Project/results/';
-    pybulletPath = "C:/Users/SBWork/Documents/pythonLibs/bullet3/data/";
+    resultFolder = os.path.dirname(os.path.abspath(__file__)) + '/results/';
+    pybulletPath = "C:/ProgramData/Anaconda2/Lib/bullet3/data/";
 
 
-    env = sim_environment(tW=tW,tH=tH,useGUI=useGUI,usePokerBot=usePokerBot,useGripper=useGripper,useGripperBot=useGripperBot,SIM_SECOND_STEPS=SIM_STEPS,towerOrient=towerOrient,delta=delta,buildTower=buildTower,pybulletPath=pybulletPath,outfilePath=resultFolder,log_data=log_data);
+    env = sim_environment(tW=tW,tH=tH,useGUI=useGUI,usePokerBot=usePokerBot,useGripper=useGripper,useGripperBot=useGripperBot,SIM_SECOND_STEPS=SIM_STEPS,towerOrient=towerOrient,delta=delta,buildTower=buildTower,pybulletPath=pybulletPath,outfilePath=resultFolder,log_data=log_data,init_poker_pos=init_poker_pos,init_gripper_pos=init_gripper_pos,use_slow_motion=use_slow_motion,slow_factor=slow_factor);
     
-    
+    test_cooperation();
+    return;
     #test_pokerbot();
     #env.reset_simulation();
     test_poker();
@@ -65,14 +73,14 @@ def simulation_examples():
 
 def test_poker():
     start_time = time.time();
-    env.set_poker_reset_position([-1,0,2]);
+    env.set_poker_reset_position([-.6,0,2]);
     env.reset_simulation();
-    for i in range(0,1000):
+    for i in range(0,700):
         env.move_poker_px();
     string1 = env.get_log_string();    
     env.reset_simulation();
         
-    for i in range(0,1000):
+    for i in range(0,700):
         env.move_poker_pz();
     string2 = env.get_log_string();  
     env.reset_simulation();   #env.set_poker_reset_position([0,0,3]); 
@@ -101,7 +109,52 @@ def test_poker():
         env.move_poker_stationary();
     env.reset_simulation();
         
+def test_cooperation():
+    print("Demonstrating our idea co-operative case");
+    for j in range(0,100):
+        env.step_sim();
+    env.set_poker_position([-.5,0,1.56]);
+    env.set_gripper_position([.7,0,1.56]);
+    env.open_gripper();
+    
+    
+    for j in range(0,117):
+        env.move_poker_px();
         
+    for j in range(0,117):
+        env.move_poker_nx();
+        
+    env.set_gripper_position([.3,0,1.56]);
+    
+    for i in range(0,100):
+        env.step_sim();
+        
+    env.close_gripper();
+    
+    for i in range(0,100):
+        env.step_sim();
+    
+    
+    #for i in range(0,100):
+    #       env.move_gripper_pz();   
+
+
+    for i in range(0,150):
+            env.move_gripper_px();
+    #env.set_gripper_position([.2,0,2],force = 500);
+    for i in range(0,150):
+            env.move_gripper_nx();
+    
+    env.open_gripper();
+    
+    for i in range(0,100):
+        env.step_sim();
+        
+    for i in range(0,150):
+            env.move_gripper_px();
+    
+    
+    raw_input();
 def test_pokerbot():
     STEPS=0;
     ROB_STEPS = 1000;
