@@ -14,7 +14,7 @@ ARM_REACH_MIN = .1
 ARM_FIRST_HEIGHT = .3
 
 TABLE_HEIGHT = 1.30
-POKER_POS_OFFSET = 1.5
+POKER_POS_OFFSET = 1.3
 GRABBER_POS_OFFSET = 1.3
 GRIPPER_LENGTH = .2
 BLOCK_HEIGHT = .07
@@ -25,9 +25,10 @@ BLOCK_LENGTH = .35
 #BLOCK_HEIGHT=.09#These are taken from URDF file
 #BLOCK_WIDTH=.15
 #BLOCK_LENGTH=.45
-POKER_HEIGHT=.03#These are taken from URDF file
-POKER_WIDTH=.05
-POKER_LENGTH=.6
+#"0.4666666 0.0388888 0.0233333"
+POKER_HEIGHT=0.0233333#These are taken from URDF file
+POKER_WIDTH=0.0388888
+POKER_LENGTH=0.4666666
 
 cam_dist    = 2.5
 #cam_yaw    = 60
@@ -120,7 +121,7 @@ class sim_environment():
         self.kukaPath = self.pybulletPath + "kuka_lwr/kuka3.urdf"
         #self.kukaPath = self.pybulletPath + "kuka_iiwa/model.urdf"
         self.jengaPath = self.pybulletPath + "jenga/jenga_mid3.urdf"
-        self.pokerPath = self.pybulletPath + "jenga/poker.urdf"
+        self.pokerPath = self.pybulletPath + "jenga/poker2.urdf"
         self.gripperPath = self.pybulletPath + "gripper/wsg50_one_motor_gripper_new_free_base.sdf" 
             
             

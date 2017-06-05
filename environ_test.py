@@ -39,7 +39,7 @@ def simulation_examples():
     env = sim_environment(tW=tW,tH=tH,useGUI=useGUI,usePokerBot=usePokerBot,useGripper=useGripper,useGripperBot=useGripperBot,SIM_SECOND_STEPS=SIM_STEPS,towerOrient=towerOrient,delta=delta,buildTower=buildTower,pybulletPath=pybulletPath,outfilePath=resultFolder,log_data=log_data,init_poker_pos=init_poker_pos,init_gripper_pos=init_gripper_pos,use_slow_motion=use_slow_motion,slow_factor=slow_factor);
 
     env.reset_simulation();
-    test_gripper()
+    #test_gripper()
     #This code is the latest example I have shown you, it uses both to poker and the gripper, poker can be held by gripper
     start_time=time.time()
 
@@ -47,7 +47,7 @@ def simulation_examples():
     #test_cooperation();
 
     #env.reset_simulation();
-    #test_pokerbot();
+    test_pokerbot();
     #env.reset_simulation();
     #test_poker();
 
