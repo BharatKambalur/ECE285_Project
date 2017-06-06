@@ -5,5 +5,9 @@
 6. changed reward function to ignore the done case for the half portruded state, 
 added a proportinality gain to the bias terms, and added a restrciton of zero rewards when the blocks below and above good push block are moved
 7.increased the envelope in for the done case in the x direction
-8. removed the bias term only gaining, +1 if it pushes the block over
+8. increase NN size,removed the bias term only gaining, +1 if it pushes the block over
 9. removed bias term and made it such that the NN learns over all 4000 iterations, or done case (larger epochs)
+10.reduce NN size back to original size, added negative rewards penalizing the wrong actions
+11. only 500 episodes, using the new reward function changed by bharat. 
+12. same as above, except for 1000 episodes and upped the magnitude for the reward gained by pushing and negative reward for moving the surrounding blocks
+13. limited the problem to just a plane, z is fixed, and the neurel net is now only going to ouput 4 things, (left, right, forward, back)

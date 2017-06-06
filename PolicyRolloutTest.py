@@ -25,17 +25,22 @@ if __name__ == "__main__":
     state_size = 6
     action_size = 6
     agent = DQNAgent(state_size, action_size)
-    agent.load("./run_results/JengaLearn_2.h5")
-    state = env.reset_random()
-    print(state)
-    state = np.reshape(state, [1, state_size])
-    timer.sleep(1)
-    print('Starting Policy Rolloout from learned weights')
-    for time in range(1000):
-        action = np.argmax(agent.model.predict(state)[0])
-        next_state, reward, done = env.step(action)
-        timer.sleep(0.005)
-        next_state = np.reshape(next_state, [1, state_size])
-        agent.remember(state, action, reward, next_state, done)
-        state = next_state
-
+    agent.load("./run_results/JengaLearn_11.h5")
+    for e in range(10):
+        state = env.reset_random()
+        #print(state)
+        state = np.reshape(state, [1, state_size])
+        #timer.sleep(1)
+        TotalReward = 0
+        print('Starting Policy Rolloout from learned weights')
+        for time in range(300):
+            action = np.argmax(agent.model.predict(state)[0])
+            next_state, reward, done = env.step(action)
+            timer.sleep(0.005)
+            next_state = np.reshape(next_state, [1, state_size])
+            TotalReward = reward + TotalReward
+            state = next_state
+            if( env.pushed_out_check == True):
+                break
+        print("episode: {}, Reward score: {}"
+                      .format(e, TotalReward))

@@ -46,3 +46,4 @@ Temporary Items
 .apdisk
 deep-q-learning-master/
 *.pyc
+environment.py
