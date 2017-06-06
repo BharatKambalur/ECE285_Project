@@ -1,23 +1,24 @@
 # -*- coding: utf-8 -*-
 import random
-import gym
+from environment import environment
 import numpy as np
 from collections import deque
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
+import time as timer
+import matplotlib.pyplot as plt
 
 EPISODES = 1000
-
 
 class DQNAgent:
     def __init__(self, state_size, action_size):
         self.state_size = state_size
         self.action_size = action_size
-        self.memory = deque(maxlen=2000)
-        self.gamma = 0.95    # discount rate
+        self.memory = deque(maxlen=5000)
+        self.gamma = 0.5    # discount rate
         self.epsilon = 1.0  # exploration rate
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.1
         self.epsilon_decay = 0.995
         self.learning_rate = 0.001
         self.model = self._build_model()
@@ -62,19 +63,30 @@ class DQNAgent:
 
 
 if __name__ == "__main__":
-    env = gym.make('CartPole-v1')
-    state_size = env.observation_space.shape[0]
-    action_size = env.action_space.n
+    ##################################################################################
+    ##################### Uncomment for your own ####################################
+    #pybulletPath = "/home/auggienanz/bullet3/data/" #Auggie
+    #pybulletPath = "D:/ECE 285 - Advances in Robot Manipulation/bullet3-master/data/" #Bharat
+    pybulletPath = 'C:/Users/Juan Camilo Castillo/Documents/bullet3/bullet3-master/data/' #Juan
+    outputpath = 'C:/Users/Juan Camilo Castillo/Documents/ECE 285 Robotics/save/' #Juan
+
+    #################################################################################
+
+    env = environment(pybulletPath = pybulletPath,useGUI = True,movement_delta = 0.003)
+    state_size = 6
+    action_size = 6
     agent = DQNAgent(state_size, action_size)
     # agent.load("./save/cartpole-master.h5")
     done = False
-    batch_size = 32
-
+    batch_size = 300
+    print('Starting Simulations')
+    starttime = timer.time();
+    TR = []
+    E = []
     for e in range(EPISODES):
-        state = env.reset()
+        state = env.reset_random()
         state = np.reshape(state, [1, state_size])
-        for time in range(500):
-            # env.render()
+        for time in range(4000):
             action = agent.act(state)
             next_state, reward, done, _ = env.step(action)
             reward = reward if not done else -10
@@ -84,8 +96,17 @@ if __name__ == "__main__":
             if done:
                 print("episode: {}/{}, score: {}, e: {:.2}"
                       .format(e, EPISODES, time, agent.epsilon))
+                TR.append(TotalReward)
+                E.append(e)
                 break
         if len(agent.memory) > batch_size:
             agent.replay(batch_size)
-        # if e % 10 == 0:
-        #     agent.save("./save/cartpole.h5")
+    print((timer.time() - starttime)/EPISODES)
+    fig = plt.figure()
+    ax = plt.subplot(111)
+    ax.plot(E,TR)
+    plt.title('Episodic Reward')
+    plt.ylabel('Reward')
+    plt.xlabel('episode')
+    #fig.savefig(outputpath + 'Episodic Reward_5.png')
+    #agent.save(outputpath + 'JengaLearn_5.h5')
