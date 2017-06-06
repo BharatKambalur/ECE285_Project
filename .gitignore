@@ -4,7 +4,6 @@
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
-*.pyc
 
 # Folder config file
 Desktop.ini
@@ -46,7 +45,4 @@ Network Trash Folder
 Temporary Items
 .apdisk
 deep-q-learning-master/
-
-# Compiled Python files
 *.pyc
-/__pycache__/

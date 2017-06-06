@@ -7,8 +7,10 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 from keras import backend as K
+import time as timer
+import matplotlib.pyplot as plt
 
-EPISODES = 5000
+EPISODES = 10
 
 
 class DQNAgent:
@@ -16,7 +18,7 @@ class DQNAgent:
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=2000)
-        self.gamma = 0.95    # discount rate
+        self.gamma = 0.5    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
@@ -84,7 +86,7 @@ if __name__ == "__main__":
 
     #################################################################################
 
-    env = environment(pybulletPath)
+    env = environment(pybulletPath = pybulletPath,useGUI = True,movement_delta = 0.003)
     state_size = 6
     action_size = 6
     agent = DQNAgent(state_size, action_size)
@@ -92,12 +94,15 @@ if __name__ == "__main__":
     done = False
     batch_size = 200
     print('Starting Simulations')
+    starttime = timer.time();
+    TR = []
+    E = []
     for e in range(EPISODES):
-        print('Starting new Episode')
-        state = env.reset()
+        #print('Starting new Episode')
+        state = env.reset_random()
         state = np.reshape(state, [1, state_size])
         TotalReward = 0
-        for time in range(20000):
+        for time in range(2000):
             # env.render()
             #print(time)
             action = agent.act(state)
@@ -110,9 +115,19 @@ if __name__ == "__main__":
                 agent.update_target_model()
                 print("episode: {}/{}, Reward score: {}, e: {:.2}"
                       .format(e, EPISODES, TotalReward, agent.epsilon))
+                TR.append(TotalReward)
+                E.append(e)
                 break
         if len(agent.memory) > batch_size:
-            print('Learning new model')
+            #print('Learning new model')
             agent.replay(batch_size)
         # if e % 10 == 0:
-    agent.save(outputpath + 'JengaLearn.h5')
+    print((timer.time() - starttime)/EPISODES)
+    fig = plt.figure()
+    ax = plt.subplot(111)
+    ax.plot(E,TR)
+    plt.title('Episodic Reward')
+    plt.ylabel('Reward')
+    plt.xlabel('episode')
+    #fig.savefig(outputpath + 'Episodic Reward_5.png')
+    #agent.save(outputpath + 'JengaLearn_5.h5')
