@@ -7,6 +7,8 @@ To ensure correct models are present for Pybullet, please copy the contents of t
 ## Training
 
 To train your own model, run 'ddqn.py'. Please update the Pybullet path to the correct destination. Also, to save the model, uncomment the model that says "agent.save('<model_name>')"
+update pybulletPath and outputpath
+
 
 ## Testing the Trained Model
 
